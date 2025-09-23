@@ -1,0 +1,234 @@
+.contacts-table-container {
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.contacts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.contacts-table th,
+.contacts-table td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.contacts-table thead th {
+  background-color: var(--color-bg-tertiary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.table-header {
+  position: relative;
+  user-select: none;
+}
+
+.table-header.sortable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.table-header.sortable:hover {
+  background-color: var(--color-border);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.sort-indicator {
+  display: flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+  opacity: 0.5;
+}
+
+.table-header.sorted .sort-indicator {
+  opacity: 1;
+}
+
+.sort-indicator.desc {
+  transform: rotate(180deg);
+}
+
+.select-column {
+  width: 48px;
+  text-align: center;
+}
+
+.actions-column {
+  width: 200px;
+}
+
+.table-row {
+  transition: background-color 0.15s ease;
+}
+
+.table-row:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.table-row.selected {
+  background-color: rgb(59 130 246 / 0.05);
+}
+
+.name-cell {
+  min-width: 200px;
+}
+
+.contact-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.contact-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.contact-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-name {
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.contact-status {
+  display: flex;
+  align-items: center;
+}
+
+.email-cell,
+.phone-cell,
+.company-cell,
+.role-cell {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.date-cell {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.actions-cell {
+  min-width: 200px;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.contact-tags {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.more-actions {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl);
+}
+
+.empty-content {
+  color: var(--color-text-muted);
+}
+
+.empty-content p {
+  margin: 0;
+}
+
+.empty-description {
+  font-size: 0.875rem;
+  margin-top: var(--spacing-sm);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .contacts-table th,
+  .contacts-table td {
+    padding: var(--spacing-sm);
+  }
+  
+  .contact-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .table-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .contact-tags {
+    order: 2;
+  }
+  
+  .more-actions {
+    order: 1;
+    align-self: flex-end;
+  }
+}
+
+/* Custom checkbox styles for indeterminate state */
+.checkbox:indeterminate {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.checkbox:indeterminate::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 2px;
+  background-color: white;
+  border-radius: 1px;
+}
