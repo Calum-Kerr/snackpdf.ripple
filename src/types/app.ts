@@ -64,6 +64,7 @@ export interface AppState {
   featureRequests: FeatureRequest[];
   showFeatureRequests: boolean;
   currentUser: string;
+  showLegalPage: string | null;
 }
 
 // Legacy Contact interface for backward compatibility during transition

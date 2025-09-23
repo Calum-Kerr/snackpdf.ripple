@@ -7,6 +7,8 @@ import { Header } from './Header';
 import { Table } from './Table';
 import { Pagination } from './Pagination';
 import { FeatureRequestComponent } from './FeatureRequest';
+import { Footer } from './Footer';
+import { LegalPages } from './LegalPages';
 import './App.css';
 
 export class App extends BaseRippleComponent {
@@ -30,7 +32,8 @@ export class App extends BaseRippleComponent {
     },
     featureRequests: mockFeatureRequests,
     showFeatureRequests: false,
-    currentUser: 'current-user'
+    currentUser: 'current-user',
+    showLegalPage: null
   };
 
   private sidebar: Sidebar;
@@ -38,6 +41,8 @@ export class App extends BaseRippleComponent {
   private table: Table;
   private pagination: Pagination;
   private featureRequestComponent: FeatureRequestComponent;
+  private footer: Footer;
+  private legalPages: LegalPages;
 
   private debouncedSearch = debounce((search: string) => {
     this.updateFilters({ search });
@@ -80,26 +85,50 @@ export class App extends BaseRippleComponent {
       onSubmitRequest: this.handleSubmitFeatureRequest.bind(this),
       currentUser: this.state.currentUser
     });
+
+    this.footer = new Footer({
+      onPageChange: this.handleLegalPageChange.bind(this)
+    });
+
+    this.legalPages = new LegalPages({
+      currentPage: this.state.showLegalPage || '',
+      onBack: this.handleBackFromLegal.bind(this)
+    });
   }
 
   render(): void {
+    // If showing legal page, render only the legal page
+    if (this.state.showLegalPage) {
+      this.element.innerHTML = `
+        <div class="legal-page-container"></div>
+      `;
+      
+      const legalContainer = this.element.querySelector('.legal-page-container');
+      if (legalContainer) this.legalPages.mount(legalContainer as HTMLElement);
+      return;
+    }
+
+    // Normal app layout with footer
     this.element.innerHTML = `
-      <div class="sidebar-container"></div>
-      <div class="main-content">
-        <div class="header-container"></div>
-        <div class="content-area">
-          ${this.state.showFeatureRequests ? `
-            <div class="feature-request-section">
-              <div class="feature-request-container"></div>
-            </div>
-          ` : `
-            <div class="table-section">
-              <div class="table-container"></div>
-              <div class="pagination-container"></div>
-            </div>
-          `}
+      <div class="app-main">
+        <div class="sidebar-container"></div>
+        <div class="main-content">
+          <div class="header-container"></div>
+          <div class="content-area">
+            ${this.state.showFeatureRequests ? `
+              <div class="feature-request-section">
+                <div class="feature-request-container"></div>
+              </div>
+            ` : `
+              <div class="table-section">
+                <div class="table-container"></div>
+                <div class="pagination-container"></div>
+              </div>
+            `}
+          </div>
         </div>
       </div>
+      <div class="footer-container"></div>
     `;
 
     // Mount child components
@@ -108,6 +137,7 @@ export class App extends BaseRippleComponent {
     const tableContainer = this.element.querySelector('.table-container');
     const paginationContainer = this.element.querySelector('.pagination-container');
     const featureRequestContainer = this.element.querySelector('.feature-request-container');
+    const footerContainer = this.element.querySelector('.footer-container');
 
     if (sidebarContainer) this.sidebar.mount(sidebarContainer as HTMLElement);
     if (headerContainer) this.header.mount(headerContainer as HTMLElement);
@@ -118,6 +148,8 @@ export class App extends BaseRippleComponent {
       if (tableContainer) this.table.mount(tableContainer as HTMLElement);
       if (paginationContainer) this.pagination.mount(paginationContainer as HTMLElement);
     }
+
+    if (footerContainer) this.footer.mount(footerContainer as HTMLElement);
   }
 
   private getFilteredTools(): PDFTool[] {
@@ -268,6 +300,17 @@ export class App extends BaseRippleComponent {
     
     this.state.featureRequests.unshift(featureRequest); // Add to beginning of array
     this.updateComponents();
+  }
+
+  private handleLegalPageChange(page: string): void {
+    this.state.showLegalPage = page;
+    this.legalPages.update({ currentPage: page });
+    this.render();
+  }
+
+  private handleBackFromLegal(): void {
+    this.state.showLegalPage = null;
+    this.render();
   }
 
   mount(parent: HTMLElement): void {
