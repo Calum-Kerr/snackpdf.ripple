@@ -8,10 +8,12 @@ export interface SidebarProps {
 
 export class Sidebar extends BaseRippleComponent {
   private navItems = [
-    { id: 'contacts', label: 'Contacts', icon: 'menu' },
-    { id: 'companies', label: 'Companies', icon: 'menu' },
-    { id: 'deals', label: 'Deals', icon: 'menu' },
-    { id: 'tasks', label: 'Tasks', icon: 'menu' }
+    { id: 'organise', label: 'Organise', icon: 'menu' },
+    { id: 'convert-to-pdf', label: 'Convert to PDF', icon: 'menu' },
+    { id: 'convert-from-pdf', label: 'Convert from PDF', icon: 'menu' },
+    { id: 'sign-and-security', label: 'Sign and Security', icon: 'menu' },
+    { id: 'view-and-edit', label: 'View and Edit', icon: 'menu' },
+    { id: 'advanced', label: 'Advanced', icon: 'menu' }
   ];
 
   constructor(props: SidebarProps) {
@@ -31,7 +33,6 @@ export class Sidebar extends BaseRippleComponent {
             class="nav-item ${item.id === this.props.activeTab ? 'active' : ''}"
             data-tab="${item.id}"
           >
-            ${this.createIcon(item.icon).outerHTML}
             <span>${item.label}</span>
           </button>
         `).join('')}

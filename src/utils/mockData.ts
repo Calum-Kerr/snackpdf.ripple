@@ -1,6 +1,377 @@
-import { Contact } from '../types/app';
+import { Contact, PDFTool, FeatureRequest } from '../types/app';
 
-// Mock data for development
+// Mock PDF Tools data based on Ghostscript-compatible Stirling PDF features
+export const mockPDFTools: PDFTool[] = [
+  // Organise category
+  {
+    id: 'merge-pdfs',
+    name: 'Merge PDFs',
+    description: 'Combine multiple PDF files into a single document',
+    category: 'organise',
+    icon: 'add_to_photos',
+    ghostscriptCompatible: true,
+    popularity: 95,
+    tags: ['merge', 'combine', 'essential']
+  },
+  {
+    id: 'split-pdf',
+    name: 'Split PDF',
+    description: 'Split a PDF document into multiple files',
+    category: 'organise',
+    icon: 'cut',
+    ghostscriptCompatible: true,
+    popularity: 90,
+    tags: ['split', 'separate', 'essential']
+  },
+  {
+    id: 'extract-pages',
+    name: 'Extract Pages',
+    description: 'Extract specific pages from a PDF document',
+    category: 'organise',
+    icon: 'upload',
+    ghostscriptCompatible: true,
+    popularity: 85,
+    tags: ['extract', 'pages', 'essential']
+  },
+  {
+    id: 'rotate-pdf',
+    name: 'Rotate PDF',
+    description: 'Rotate pages in a PDF document',
+    category: 'organise',
+    icon: 'rotate_right',
+    ghostscriptCompatible: true,
+    popularity: 75,
+    tags: ['rotate', 'orientation']
+  },
+  {
+    id: 'remove-pages',
+    name: 'Remove Pages',
+    description: 'Remove specific pages from a PDF document',
+    category: 'organise',
+    icon: 'delete',
+    ghostscriptCompatible: true,
+    popularity: 70,
+    tags: ['remove', 'delete', 'pages']
+  },
+  {
+    id: 'organize-pages',
+    name: 'Organize Pages',
+    description: 'Reorder and organize pages in a PDF',
+    category: 'organise',
+    icon: 'format_list_bulleted',
+    ghostscriptCompatible: true,
+    popularity: 80,
+    tags: ['organize', 'reorder', 'pages']
+  },
+
+  // Convert to PDF category
+  {
+    id: 'image-to-pdf',
+    name: 'Image to PDF',
+    description: 'Convert images (JPG, PNG, etc.) to PDF format',
+    category: 'convert-to-pdf',
+    icon: 'picture_as_pdf',
+    ghostscriptCompatible: true,
+    popularity: 95,
+    tags: ['image', 'convert', 'essential']
+  },
+  {
+    id: 'html-to-pdf',
+    name: 'HTML to PDF',
+    description: 'Convert HTML files and web pages to PDF',
+    category: 'convert-to-pdf',
+    icon: 'html',
+    ghostscriptCompatible: true,
+    popularity: 85,
+    tags: ['html', 'web', 'convert']
+  },
+  {
+    id: 'markdown-to-pdf',
+    name: 'Markdown to PDF',
+    description: 'Convert Markdown files to PDF format',
+    category: 'convert-to-pdf',
+    icon: 'markdown',
+    ghostscriptCompatible: true,
+    popularity: 70,
+    tags: ['markdown', 'convert', 'text']
+  },
+  {
+    id: 'text-to-pdf',
+    name: 'Text to PDF',
+    description: 'Convert plain text files to PDF format',
+    category: 'convert-to-pdf',
+    icon: 'draft',
+    ghostscriptCompatible: true,
+    popularity: 65,
+    tags: ['text', 'convert', 'basic']
+  },
+
+  // Convert from PDF category
+  {
+    id: 'pdf-to-image',
+    name: 'PDF to Image',
+    description: 'Convert PDF pages to images (PNG, JPG)',
+    category: 'convert-from-pdf',
+    icon: 'photo_library',
+    ghostscriptCompatible: true,
+    popularity: 90,
+    tags: ['image', 'convert', 'essential']
+  },
+  {
+    id: 'pdf-to-text',
+    name: 'PDF to Text',
+    description: 'Extract text content from PDF documents',
+    category: 'convert-from-pdf',
+    icon: 'text_fields',
+    ghostscriptCompatible: true,
+    popularity: 85,
+    tags: ['text', 'extract', 'content']
+  },
+  {
+    id: 'extract-images',
+    name: 'Extract Images',
+    description: 'Extract all images from a PDF document',
+    category: 'convert-from-pdf',
+    icon: 'photo_library',
+    ghostscriptCompatible: true,
+    popularity: 75,
+    tags: ['images', 'extract', 'media']
+  },
+
+  // Sign and Security category
+  {
+    id: 'add-password',
+    name: 'Add Password',
+    description: 'Protect PDF with password encryption',
+    category: 'sign-and-security',
+    icon: 'lock',
+    ghostscriptCompatible: true,
+    popularity: 90,
+    tags: ['password', 'security', 'protect']
+  },
+  {
+    id: 'remove-password',
+    name: 'Remove Password',
+    description: 'Remove password protection from PDF',
+    category: 'sign-and-security',
+    icon: 'lock_open_right',
+    ghostscriptCompatible: true,
+    popularity: 80,
+    tags: ['password', 'unlock', 'security']
+  },
+  {
+    id: 'change-permissions',
+    name: 'Change Permissions',
+    description: 'Modify PDF permissions and restrictions',
+    category: 'sign-and-security',
+    icon: 'encrypted',
+    ghostscriptCompatible: true,
+    popularity: 70,
+    tags: ['permissions', 'security', 'restrict']
+  },
+
+  // View and Edit category
+  {
+    id: 'add-watermark',
+    name: 'Add Watermark',
+    description: 'Add text or image watermarks to PDF',
+    category: 'view-and-edit',
+    icon: 'water_drop',
+    ghostscriptCompatible: true,
+    popularity: 85,
+    tags: ['watermark', 'branding', 'edit']
+  },
+  {
+    id: 'add-page-numbers',
+    name: 'Add Page Numbers',
+    description: 'Add page numbers to PDF documents',
+    category: 'view-and-edit',
+    icon: '123',
+    ghostscriptCompatible: true,
+    popularity: 80,
+    tags: ['pages', 'numbers', 'edit']
+  },
+  {
+    id: 'add-stamps',
+    name: 'Add Stamps',
+    description: 'Add stamps and annotations to PDF',
+    category: 'view-and-edit',
+    icon: 'approval',
+    ghostscriptCompatible: true,
+    popularity: 75,
+    tags: ['stamps', 'annotations', 'edit']
+  },
+  {
+    id: 'flatten-pdf',
+    name: 'Flatten PDF',
+    description: 'Flatten form fields and annotations',
+    category: 'view-and-edit',
+    icon: 'layers_clear',
+    ghostscriptCompatible: true,
+    popularity: 60,
+    tags: ['flatten', 'forms', 'finalize']
+  },
+
+  // Advanced category
+  {
+    id: 'compress-pdf',
+    name: 'Compress PDF',
+    description: 'Reduce PDF file size while maintaining quality',
+    category: 'advanced',
+    icon: 'zoom_in_map',
+    ghostscriptCompatible: true,
+    popularity: 95,
+    tags: ['compress', 'optimize', 'essential']
+  },
+  {
+    id: 'ocr-pdf',
+    name: 'OCR / Cleanup Scans',
+    description: 'Convert scanned documents to searchable text',
+    category: 'advanced',
+    icon: 'quick_reference_all',
+    ghostscriptCompatible: true,
+    popularity: 85,
+    tags: ['ocr', 'scans', 'text']
+  },
+  {
+    id: 'pdf-to-pdfa',
+    name: 'PDF to PDF/A',
+    description: 'Convert to PDF/A archival format',
+    category: 'advanced',
+    icon: 'picture_as_pdf',
+    ghostscriptCompatible: true,
+    popularity: 70,
+    tags: ['pdfa', 'archive', 'standard']
+  },
+  {
+    id: 'repair-pdf',
+    name: 'Repair PDF',
+    description: 'Attempt to repair corrupted PDF files',
+    category: 'advanced',
+    icon: 'build',
+    ghostscriptCompatible: true,
+    popularity: 65,
+    tags: ['repair', 'fix', 'corrupted']
+  },
+  {
+    id: 'remove-blank-pages',
+    name: 'Remove Blank Pages',
+    description: 'Automatically detect and remove blank pages',
+    category: 'advanced',
+    icon: 'scan_delete',
+    ghostscriptCompatible: true,
+    popularity: 75,
+    tags: ['blank', 'remove', 'cleanup']
+  }
+];
+
+export const availableToolCategories = ['organise', 'convert-to-pdf', 'convert-from-pdf', 'sign-and-security', 'view-and-edit', 'advanced'];
+export const availableToolTags = ['essential', 'merge', 'combine', 'split', 'separate', 'extract', 'pages', 'rotate', 'orientation', 'remove', 'delete', 'organize', 'reorder', 'image', 'convert', 'html', 'web', 'markdown', 'text', 'basic', 'content', 'media', 'password', 'security', 'protect', 'unlock', 'restrict', 'permissions', 'watermark', 'branding', 'edit', 'numbers', 'stamps', 'annotations', 'flatten', 'forms', 'finalize', 'compress', 'optimize', 'ocr', 'scans', 'pdfa', 'archive', 'standard', 'repair', 'fix', 'corrupted', 'blank', 'cleanup'];
+
+// Feature Requests mock data
+export const mockFeatureRequests: FeatureRequest[] = [
+  {
+    id: 'fr-1',
+    title: 'Excel to PDF Converter',
+    description: 'Convert Excel spreadsheets (.xlsx, .xls) to PDF format while preserving formatting and charts.',
+    category: 'convert-to-pdf',
+    submittedBy: 'Sarah M.',
+    submittedAt: new Date('2024-01-20'),
+    votes: 45,
+    status: 'pending',
+    tags: ['excel', 'spreadsheet', 'convert'],
+    voters: ['user1', 'user2', 'user3']
+  },
+  {
+    id: 'fr-2',
+    title: 'PDF Digital Signature Tool',
+    description: 'Add digital signatures to PDF documents with certificate validation and timestamp.',
+    category: 'sign-and-security',
+    submittedBy: 'Mike Chen',
+    submittedAt: new Date('2024-01-18'),
+    votes: 38,
+    status: 'in-progress',
+    tags: ['signature', 'certificate', 'validation'],
+    voters: ['user4', 'user5']
+  },
+  {
+    id: 'fr-3',
+    title: 'Batch PDF Processing',
+    description: 'Process multiple PDF files at once with the same operation (merge, split, compress, etc.).',
+    category: 'advanced',
+    submittedBy: 'Emily R.',
+    submittedAt: new Date('2024-01-15'),
+    votes: 52,
+    status: 'pending',
+    tags: ['batch', 'automation', 'productivity'],
+    voters: ['user1', 'user6', 'user7']
+  },
+  {
+    id: 'fr-4',
+    title: 'PDF Form Builder',
+    description: 'Create interactive PDF forms with text fields, checkboxes, dropdowns, and validation.',
+    category: 'view-and-edit',
+    submittedBy: 'David K.',
+    submittedAt: new Date('2024-01-12'),
+    votes: 31,
+    status: 'pending',
+    tags: ['forms', 'interactive', 'builder'],
+    voters: ['user2', 'user8']
+  },
+  {
+    id: 'fr-5',
+    title: 'PowerPoint to PDF',
+    description: 'Convert PowerPoint presentations to PDF with notes and animation preservation options.',
+    category: 'convert-to-pdf',
+    submittedBy: 'Lisa T.',
+    submittedAt: new Date('2024-01-10'),
+    votes: 29,
+    status: 'pending',
+    tags: ['powerpoint', 'presentation', 'notes'],
+    voters: ['user3', 'user9']
+  },
+  {
+    id: 'fr-6',
+    title: 'PDF Bookmark Editor',
+    description: 'Advanced bookmark editing with hierarchical structure and automatic generation from headings.',
+    category: 'view-and-edit',
+    submittedBy: 'James W.',
+    submittedAt: new Date('2024-01-08'),
+    votes: 24,
+    status: 'pending',
+    tags: ['bookmarks', 'navigation', 'structure'],
+    voters: ['user4', 'user10']
+  },
+  {
+    id: 'fr-7',
+    title: 'PDF to Word with Formatting',
+    description: 'Convert PDF to Word documents while preserving complex formatting, tables, and images.',
+    category: 'convert-from-pdf',
+    submittedBy: 'Anna K.',
+    submittedAt: new Date('2024-01-05'),
+    votes: 67,
+    status: 'pending',
+    tags: ['word', 'formatting', 'conversion'],
+    voters: ['user1', 'user5', 'user11']
+  },
+  {
+    id: 'fr-8',
+    title: 'PDF Comparison Tool',
+    description: 'Compare two PDF documents side-by-side with highlighting of differences.',
+    category: 'advanced',
+    submittedBy: 'Robert G.',
+    submittedAt: new Date('2024-01-03'),
+    votes: 33,
+    status: 'pending',
+    tags: ['compare', 'diff', 'analysis'],
+    voters: ['user6', 'user12']
+  }
+];
+
+export const featureRequestStatuses = ['pending', 'in-progress', 'completed', 'rejected'];
+export const featureRequestCategories = availableToolCategories;
+
+// Legacy mock data for contacts (keeping for backward compatibility during transition)
 export const mockContacts: Contact[] = [
   {
     id: '1',

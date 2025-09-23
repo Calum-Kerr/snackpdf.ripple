@@ -1,8 +1,19 @@
 .app-layout {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
+  flex-direction: column;
+  min-height: 100vh;
   background-color: var(--color-bg-secondary);
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.legal-page-container {
+  width: 100%;
+  min-height: 100vh;
 }
 
 .sidebar-container {
@@ -16,7 +27,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: 0;
 }
 
 .header-container {
@@ -30,6 +41,10 @@
   padding: var(--spacing-lg);
   overflow: auto;
   background-color: var(--color-bg-secondary);
+}
+
+.footer-container {
+  margin-top: auto;
 }
 
 .table-section {

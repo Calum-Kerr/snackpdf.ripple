@@ -232,3 +232,66 @@
   background-color: white;
   border-radius: 1px;
 }
+
+/* PDF Tool specific styles */
+.description-cell {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-cell {
+  min-width: 120px;
+}
+
+.category-badge {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.popularity-cell {
+  min-width: 120px;
+}
+
+.popularity-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+}
+
+.popularity-fill {
+  height: 4px;
+  background-color: var(--color-primary);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  flex: 1;
+  position: relative;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-bg-tertiary) 100%);
+}
+
+.popularity-text {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  min-width: 2rem;
+  text-align: right;
+}
+
+/* Status badge updates for PDF tools */
+.status-badge.status-active {
+  background-color: #10b981;
+  color: white;
+}
+
+.status-badge.status-inactive {
+  background-color: #6b7280;
+  color: white;
+}
