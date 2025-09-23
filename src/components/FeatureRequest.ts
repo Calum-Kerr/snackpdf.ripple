@@ -34,7 +34,6 @@ export class FeatureRequestComponent extends BaseRippleComponent {
         </div>
         <div class="header-actions">
           <button class="btn btn-primary submit-request-btn">
-            ${this.createIcon('add').outerHTML}
             Submit Request
           </button>
         </div>
@@ -85,7 +84,7 @@ export class FeatureRequestComponent extends BaseRippleComponent {
         <div class="submit-form">
           <div class="form-header">
             <h3>Submit Feature Request</h3>
-            <button class="close-form-btn">${this.createIcon('close').outerHTML}</button>
+            <button class="close-form-btn">×</button>
           </div>
           <form class="request-form">
             <div class="form-group">
@@ -152,7 +151,7 @@ export class FeatureRequestComponent extends BaseRippleComponent {
             data-request-id="${request.id}"
             ${hasVoted ? 'disabled' : ''}
           >
-            ${this.createIcon('thumb_up').outerHTML}
+            ↑
           </button>
           <span class="vote-count">${request.votes}</span>
         </div>

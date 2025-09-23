@@ -18,8 +18,7 @@ export class LegalPages extends BaseRippleComponent {
       <div class="legal-content">
         <div class="legal-header">
           <button class="back-button">
-            ${this.createIcon('arrow_back').outerHTML}
-            Back to SnackPDF
+            ← Back to SnackPDF
           </button>
           <h1>${content.title}</h1>
           <p class="last-updated">Last updated: ${content.lastUpdated}</p>

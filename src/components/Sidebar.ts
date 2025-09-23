@@ -33,7 +33,6 @@ export class Sidebar extends BaseRippleComponent {
             class="nav-item ${item.id === this.props.activeTab ? 'active' : ''}"
             data-tab="${item.id}"
           >
-            ${this.createIcon(item.icon).outerHTML}
             <span>${item.label}</span>
           </button>
         `).join('')}

@@ -50,7 +50,6 @@ export class Pagination extends BaseRippleComponent {
           data-action="prev"
           ${pagination.currentPage === 1 ? 'disabled' : ''}
         >
-          ${this.createIcon('chevron-down').outerHTML}
           Previous
         </button>
         
@@ -64,7 +63,6 @@ export class Pagination extends BaseRippleComponent {
           ${pagination.currentPage === totalPages ? 'disabled' : ''}
         >
           Next
-          ${this.createIcon('chevron-down').outerHTML}
         </button>
         <button 
           class="btn btn-ghost btn-sm pagination-btn"

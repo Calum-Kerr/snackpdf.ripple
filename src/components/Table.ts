@@ -74,7 +74,6 @@ export class Table extends BaseRippleComponent {
                     <span>${column.label}</span>
                     ${column.sortable ? `
                       <div class="sort-indicator ${sortBy.column === column.key ? sortBy.direction : ''}">
-                        ${this.createIcon('chevron-down').outerHTML}
                       </div>
                     ` : ''}
                   </div>
@@ -148,7 +147,7 @@ export class Table extends BaseRippleComponent {
               ${tool.tags.length > 2 ? `<span class="tag">+${tool.tags.length - 2}</span>` : ''}
             </div>
             <button class="btn btn-ghost btn-sm more-actions" data-contact-id="${tool.id}">
-              ${this.createIcon('more').outerHTML}
+              ⋯
             </button>
           </div>
         </td>
@@ -192,7 +191,7 @@ export class Table extends BaseRippleComponent {
               ${contact.tags.length > 2 ? `<span class="tag">+${contact.tags.length - 2}</span>` : ''}
             </div>
             <button class="btn btn-ghost btn-sm more-actions" data-contact-id="${contact.id}">
-              ${this.createIcon('more').outerHTML}
+              ⋯
             </button>
           </div>
         </td>

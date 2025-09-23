@@ -34,7 +34,6 @@ export class Footer extends BaseRippleComponent {
             <h4>Connect</h4>
             <div class="social-links">
               <a href="https://linkedin.com/in/calum-x-kerr" target="_blank" class="social-link linkedin">
-                ${this.createIcon('linkedin').outerHTML}
                 <span>LinkedIn</span>
               </a>
             </div>

@@ -32,7 +32,6 @@ export class Header extends BaseRippleComponent {
         </div>
         <div class="header-right">
           <div class="search-box">
-            ${this.createIcon('search').outerHTML}
             <input 
               type="text" 
               placeholder="${searchPlaceholder}" 
@@ -41,11 +40,9 @@ export class Header extends BaseRippleComponent {
             />
           </div>
           <button class="btn btn-secondary filter-btn">
-            ${this.createIcon('filter').outerHTML}
             Filters
           </button>
           <button class="btn btn-primary request-feature-btn">
-            ${this.createIcon('lightbulb').outerHTML}
             ${addButtonText}
           </button>
         </div>
