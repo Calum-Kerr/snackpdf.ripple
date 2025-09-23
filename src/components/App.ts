@@ -1,11 +1,12 @@
 import { BaseRippleComponent } from '../types/ripple';
-import { AppState, PDFTool, ToolFilterOptions } from '../types/app';
-import { mockPDFTools } from '../utils/mockData';
+import { AppState, PDFTool, ToolFilterOptions, FeatureRequest } from '../types/app';
+import { mockPDFTools, mockFeatureRequests } from '../utils/mockData';
 import { filterPDFTools, sortPDFTools, paginatePDFTools, debounce } from '../utils/helpers';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Table } from './Table';
 import { Pagination } from './Pagination';
+import { FeatureRequestComponent } from './FeatureRequest';
 import './App.css';
 
 export class App extends BaseRippleComponent {
@@ -26,13 +27,17 @@ export class App extends BaseRippleComponent {
     sortBy: {
       column: 'name',
       direction: 'asc'
-    }
+    },
+    featureRequests: mockFeatureRequests,
+    showFeatureRequests: false,
+    currentUser: 'current-user'
   };
 
   private sidebar: Sidebar;
   private header: Header;
   private table: Table;
   private pagination: Pagination;
+  private featureRequestComponent: FeatureRequestComponent;
 
   private debouncedSearch = debounce((search: string) => {
     this.updateFilters({ search });
@@ -50,7 +55,8 @@ export class App extends BaseRippleComponent {
       activeTab: this.state.activeTab,
       filters: this.state.filters,
       onSearchChange: this.debouncedSearch,
-      onFilterChange: this.handleFilterChange.bind(this)
+      onFilterChange: this.handleFilterChange.bind(this),
+      onRequestFeature: this.handleRequestFeature.bind(this)
     });
 
     this.table = new Table({
@@ -67,6 +73,13 @@ export class App extends BaseRippleComponent {
       onPageChange: this.handlePageChange.bind(this),
       onItemsPerPageChange: this.handleItemsPerPageChange.bind(this)
     });
+
+    this.featureRequestComponent = new FeatureRequestComponent({
+      featureRequests: this.state.featureRequests,
+      onVote: this.handleFeatureVote.bind(this),
+      onSubmitRequest: this.handleSubmitFeatureRequest.bind(this),
+      currentUser: this.state.currentUser
+    });
   }
 
   render(): void {
@@ -75,10 +88,16 @@ export class App extends BaseRippleComponent {
       <div class="main-content">
         <div class="header-container"></div>
         <div class="content-area">
-          <div class="table-section">
-            <div class="table-container"></div>
-            <div class="pagination-container"></div>
-          </div>
+          ${this.state.showFeatureRequests ? `
+            <div class="feature-request-section">
+              <div class="feature-request-container"></div>
+            </div>
+          ` : `
+            <div class="table-section">
+              <div class="table-container"></div>
+              <div class="pagination-container"></div>
+            </div>
+          `}
         </div>
       </div>
     `;
@@ -88,11 +107,17 @@ export class App extends BaseRippleComponent {
     const headerContainer = this.element.querySelector('.header-container');
     const tableContainer = this.element.querySelector('.table-container');
     const paginationContainer = this.element.querySelector('.pagination-container');
+    const featureRequestContainer = this.element.querySelector('.feature-request-container');
 
     if (sidebarContainer) this.sidebar.mount(sidebarContainer as HTMLElement);
     if (headerContainer) this.header.mount(headerContainer as HTMLElement);
-    if (tableContainer) this.table.mount(tableContainer as HTMLElement);
-    if (paginationContainer) this.pagination.mount(paginationContainer as HTMLElement);
+    
+    if (this.state.showFeatureRequests) {
+      if (featureRequestContainer) this.featureRequestComponent.mount(featureRequestContainer as HTMLElement);
+    } else {
+      if (tableContainer) this.table.mount(tableContainer as HTMLElement);
+      if (paginationContainer) this.pagination.mount(paginationContainer as HTMLElement);
+    }
   }
 
   private getFilteredTools(): PDFTool[] {
@@ -201,15 +226,48 @@ export class App extends BaseRippleComponent {
       filters: this.state.filters
     });
 
-    this.table.update({
-      contacts: this.getFilteredTools(),
-      selectedContacts: this.state.selectedTools,
-      sortBy: this.state.sortBy
-    });
+    if (!this.state.showFeatureRequests) {
+      this.table.update({
+        contacts: this.getFilteredTools(),
+        selectedContacts: this.state.selectedTools,
+        sortBy: this.state.sortBy
+      });
 
-    this.pagination.update({
-      pagination: this.state.pagination
-    });
+      this.pagination.update({
+        pagination: this.state.pagination
+      });
+    } else {
+      this.featureRequestComponent.update({
+        featureRequests: this.state.featureRequests
+      });
+    }
+  }
+
+  private handleRequestFeature(): void {
+    this.state.showFeatureRequests = !this.state.showFeatureRequests;
+    this.render();
+  }
+
+  private handleFeatureVote(requestId: string): void {
+    const request = this.state.featureRequests.find(r => r.id === requestId);
+    if (request && !request.voters.includes(this.state.currentUser)) {
+      request.votes += 1;
+      request.voters.push(this.state.currentUser);
+      this.updateComponents();
+    }
+  }
+
+  private handleSubmitFeatureRequest(newRequest: Omit<FeatureRequest, 'id' | 'submittedAt' | 'votes' | 'voters'>): void {
+    const featureRequest: FeatureRequest = {
+      ...newRequest,
+      id: `fr-${Date.now()}`,
+      submittedAt: new Date(),
+      votes: 0,
+      voters: []
+    };
+    
+    this.state.featureRequests.unshift(featureRequest); // Add to beginning of array
+    this.updateComponents();
   }
 
   mount(parent: HTMLElement): void {

@@ -10,6 +10,28 @@ export interface PDFTool {
   tags: string[];
 }
 
+// Feature Request types
+export interface FeatureRequest {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  submittedBy: string;
+  submittedAt: Date;
+  votes: number;
+  status: 'pending' | 'in-progress' | 'completed' | 'rejected';
+  tags: string[];
+  voters: string[]; // Track who has voted to prevent duplicate votes
+}
+
+export interface FeatureRequestFilterOptions {
+  search: string;
+  categories: string[];
+  status: string[];
+  sortBy: 'votes' | 'date' | 'title';
+  sortOrder: 'asc' | 'desc';
+}
+
 export interface ToolFilterOptions {
   search: string;
   categories: string[];
@@ -39,6 +61,9 @@ export interface AppState {
     column: keyof PDFTool;
     direction: 'asc' | 'desc';
   };
+  featureRequests: FeatureRequest[];
+  showFeatureRequests: boolean;
+  currentUser: string;
 }
 
 // Legacy Contact interface for backward compatibility during transition

@@ -1,4 +1,4 @@
-import { Contact, PDFTool } from '../types/app';
+import { Contact, PDFTool, FeatureRequest } from '../types/app';
 
 // Mock PDF Tools data based on Ghostscript-compatible Stirling PDF features
 export const mockPDFTools: PDFTool[] = [
@@ -267,6 +267,109 @@ export const mockPDFTools: PDFTool[] = [
 
 export const availableToolCategories = ['organise', 'convert-to-pdf', 'convert-from-pdf', 'sign-and-security', 'view-and-edit', 'advanced'];
 export const availableToolTags = ['essential', 'merge', 'combine', 'split', 'separate', 'extract', 'pages', 'rotate', 'orientation', 'remove', 'delete', 'organize', 'reorder', 'image', 'convert', 'html', 'web', 'markdown', 'text', 'basic', 'content', 'media', 'password', 'security', 'protect', 'unlock', 'restrict', 'permissions', 'watermark', 'branding', 'edit', 'numbers', 'stamps', 'annotations', 'flatten', 'forms', 'finalize', 'compress', 'optimize', 'ocr', 'scans', 'pdfa', 'archive', 'standard', 'repair', 'fix', 'corrupted', 'blank', 'cleanup'];
+
+// Feature Requests mock data
+export const mockFeatureRequests: FeatureRequest[] = [
+  {
+    id: 'fr-1',
+    title: 'Excel to PDF Converter',
+    description: 'Convert Excel spreadsheets (.xlsx, .xls) to PDF format while preserving formatting and charts.',
+    category: 'convert-to-pdf',
+    submittedBy: 'Sarah M.',
+    submittedAt: new Date('2024-01-20'),
+    votes: 45,
+    status: 'pending',
+    tags: ['excel', 'spreadsheet', 'convert'],
+    voters: ['user1', 'user2', 'user3']
+  },
+  {
+    id: 'fr-2',
+    title: 'PDF Digital Signature Tool',
+    description: 'Add digital signatures to PDF documents with certificate validation and timestamp.',
+    category: 'sign-and-security',
+    submittedBy: 'Mike Chen',
+    submittedAt: new Date('2024-01-18'),
+    votes: 38,
+    status: 'in-progress',
+    tags: ['signature', 'certificate', 'validation'],
+    voters: ['user4', 'user5']
+  },
+  {
+    id: 'fr-3',
+    title: 'Batch PDF Processing',
+    description: 'Process multiple PDF files at once with the same operation (merge, split, compress, etc.).',
+    category: 'advanced',
+    submittedBy: 'Emily R.',
+    submittedAt: new Date('2024-01-15'),
+    votes: 52,
+    status: 'pending',
+    tags: ['batch', 'automation', 'productivity'],
+    voters: ['user1', 'user6', 'user7']
+  },
+  {
+    id: 'fr-4',
+    title: 'PDF Form Builder',
+    description: 'Create interactive PDF forms with text fields, checkboxes, dropdowns, and validation.',
+    category: 'view-and-edit',
+    submittedBy: 'David K.',
+    submittedAt: new Date('2024-01-12'),
+    votes: 31,
+    status: 'pending',
+    tags: ['forms', 'interactive', 'builder'],
+    voters: ['user2', 'user8']
+  },
+  {
+    id: 'fr-5',
+    title: 'PowerPoint to PDF',
+    description: 'Convert PowerPoint presentations to PDF with notes and animation preservation options.',
+    category: 'convert-to-pdf',
+    submittedBy: 'Lisa T.',
+    submittedAt: new Date('2024-01-10'),
+    votes: 29,
+    status: 'pending',
+    tags: ['powerpoint', 'presentation', 'notes'],
+    voters: ['user3', 'user9']
+  },
+  {
+    id: 'fr-6',
+    title: 'PDF Bookmark Editor',
+    description: 'Advanced bookmark editing with hierarchical structure and automatic generation from headings.',
+    category: 'view-and-edit',
+    submittedBy: 'James W.',
+    submittedAt: new Date('2024-01-08'),
+    votes: 24,
+    status: 'pending',
+    tags: ['bookmarks', 'navigation', 'structure'],
+    voters: ['user4', 'user10']
+  },
+  {
+    id: 'fr-7',
+    title: 'PDF to Word with Formatting',
+    description: 'Convert PDF to Word documents while preserving complex formatting, tables, and images.',
+    category: 'convert-from-pdf',
+    submittedBy: 'Anna K.',
+    submittedAt: new Date('2024-01-05'),
+    votes: 67,
+    status: 'pending',
+    tags: ['word', 'formatting', 'conversion'],
+    voters: ['user1', 'user5', 'user11']
+  },
+  {
+    id: 'fr-8',
+    title: 'PDF Comparison Tool',
+    description: 'Compare two PDF documents side-by-side with highlighting of differences.',
+    category: 'advanced',
+    submittedBy: 'Robert G.',
+    submittedAt: new Date('2024-01-03'),
+    votes: 33,
+    status: 'pending',
+    tags: ['compare', 'diff', 'analysis'],
+    voters: ['user6', 'user12']
+  }
+];
+
+export const featureRequestStatuses = ['pending', 'in-progress', 'completed', 'rejected'];
+export const featureRequestCategories = availableToolCategories;
 
 // Legacy mock data for contacts (keeping for backward compatibility during transition)
 export const mockContacts: Contact[] = [

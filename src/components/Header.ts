@@ -7,6 +7,7 @@ export interface HeaderProps {
   filters: FilterOptions | ToolFilterOptions;
   onSearchChange: (search: string) => void;
   onFilterChange: (filters: Partial<FilterOptions | ToolFilterOptions>) => void;
+  onRequestFeature?: () => void;
 }
 
 export class Header extends BaseRippleComponent {
@@ -17,7 +18,7 @@ export class Header extends BaseRippleComponent {
   render(): void {
     const isPDFToolsContext = this.isPDFToolsTab(this.props.activeTab);
     const searchPlaceholder = isPDFToolsContext ? 'Search PDF tools...' : 'Search contacts...';
-    const addButtonText = isPDFToolsContext ? 'Add Tool' : 'Add Contact';
+    const addButtonText = isPDFToolsContext ? 'Request Feature' : 'Add Contact';
 
     this.element.innerHTML = `
       <div class="header-content">
@@ -43,7 +44,8 @@ export class Header extends BaseRippleComponent {
             ${this.createIcon('filter').outerHTML}
             Filters
           </button>
-          <button class="btn btn-primary">
+          <button class="btn btn-primary request-feature-btn">
+            ${this.createIcon('lightbulb').outerHTML}
             ${addButtonText}
           </button>
         </div>
@@ -100,6 +102,15 @@ export class Header extends BaseRippleComponent {
       filterBtn.addEventListener('click', () => {
         // TODO: Implement filter popover
         console.log('Open filter popover');
+      });
+    }
+
+    const requestFeatureBtn = this.element.querySelector('.request-feature-btn');
+    if (requestFeatureBtn) {
+      requestFeatureBtn.addEventListener('click', () => {
+        if (this.props.onRequestFeature) {
+          this.props.onRequestFeature();
+        }
       });
     }
   }
