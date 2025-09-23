@@ -24,11 +24,10 @@ export class Table extends BaseRippleComponent {
   ];
 
   private toolColumns: ToolTableColumn[] = [
-    { key: 'name', label: 'Tool Name', sortable: true, width: '25%' },
-    { key: 'description', label: 'Description', sortable: false, width: '35%' },
+    { key: 'name', label: 'Tool Name', sortable: true, width: '30%' },
+    { key: 'description', label: 'Description', sortable: false, width: '40%' },
     { key: 'category', label: 'Category', sortable: true, width: '15%' },
-    { key: 'ghostscriptCompatible', label: 'Ghostscript', sortable: true, width: '10%' },
-    { key: 'popularity', label: 'Popularity', sortable: true, width: '10%' }
+    { key: 'popularity', label: 'Popularity', sortable: true, width: '15%' }
   ];
 
   constructor(props: TableProps) {
@@ -127,22 +126,12 @@ export class Table extends BaseRippleComponent {
             <div class="contact-avatar">${tool.name.charAt(0).toUpperCase()}</div>
             <div class="contact-details">
               <div class="contact-name">${tool.name}</div>
-              <div class="contact-status">
-                <span class="status-badge status-${tool.ghostscriptCompatible ? 'active' : 'inactive'}">
-                  ${tool.ghostscriptCompatible ? 'Ghostscript' : 'No Ghostscript'}
-                </span>
-              </div>
             </div>
           </div>
         </td>
         <td class="description-cell">${tool.description}</td>
         <td class="category-cell">
           <span class="category-badge">${tool.category.replace('-', ' ')}</span>
-        </td>
-        <td class="ghostscript-cell">
-          <span class="compatibility-badge ${tool.ghostscriptCompatible ? 'compatible' : 'incompatible'}">
-            ${tool.ghostscriptCompatible ? '✓' : '✗'}
-          </span>
         </td>
         <td class="popularity-cell">
           <div class="popularity-bar">

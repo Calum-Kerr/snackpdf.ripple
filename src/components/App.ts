@@ -16,7 +16,6 @@ export class App extends BaseRippleComponent {
     filters: {
       search: '',
       categories: [],
-      ghostscriptOnly: false,
       tags: []
     },
     pagination: {

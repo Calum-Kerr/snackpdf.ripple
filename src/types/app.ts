@@ -13,7 +13,6 @@ export interface PDFTool {
 export interface ToolFilterOptions {
   search: string;
   categories: string[];
-  ghostscriptOnly: boolean;
   tags: string[];
 }
 

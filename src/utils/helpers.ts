@@ -19,11 +19,6 @@ export function filterPDFTools(tools: PDFTool[], filters: ToolFilterOptions): PD
       }
     }
 
-    // Ghostscript compatibility filter
-    if (filters.ghostscriptOnly && !tool.ghostscriptCompatible) {
-      return false;
-    }
-
     // Tags filter
     if (filters.tags.length > 0) {
       if (!filters.tags.some(tag => tool.tags.includes(tag))) {
