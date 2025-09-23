@@ -1,12 +1,12 @@
 import { BaseRippleComponent } from '../types/ripple';
-import { FilterOptions } from '../types/app';
+import { FilterOptions, ToolFilterOptions } from '../types/app';
 import './Header.css';
 
 export interface HeaderProps {
   activeTab: string;
-  filters: FilterOptions;
+  filters: FilterOptions | ToolFilterOptions;
   onSearchChange: (search: string) => void;
-  onFilterChange: (filters: Partial<FilterOptions>) => void;
+  onFilterChange: (filters: Partial<FilterOptions | ToolFilterOptions>) => void;
 }
 
 export class Header extends BaseRippleComponent {
@@ -15,6 +15,10 @@ export class Header extends BaseRippleComponent {
   }
 
   render(): void {
+    const isPDFToolsContext = this.isPDFToolsTab(this.props.activeTab);
+    const searchPlaceholder = isPDFToolsContext ? 'Search PDF tools...' : 'Search contacts...';
+    const addButtonText = isPDFToolsContext ? 'Add Tool' : 'Add Contact';
+
     this.element.innerHTML = `
       <div class="header-content">
         <div class="header-left">
@@ -30,7 +34,7 @@ export class Header extends BaseRippleComponent {
             ${this.createIcon('search').outerHTML}
             <input 
               type="text" 
-              placeholder="Search contacts..." 
+              placeholder="${searchPlaceholder}" 
               class="search-input"
               value="${this.props.filters.search || ''}"
             />
@@ -40,7 +44,7 @@ export class Header extends BaseRippleComponent {
             Filters
           </button>
           <button class="btn btn-primary">
-            Add Contact
+            ${addButtonText}
           </button>
         </div>
       </div>
@@ -50,13 +54,30 @@ export class Header extends BaseRippleComponent {
   }
 
   private getPageTitle(): string {
-    const titles: Record<string, string> = {
+    // PDF Tools tabs
+    const pdfToolTitles: Record<string, string> = {
+      'organise': 'Organise',
+      'convert-to-pdf': 'Convert to PDF',
+      'convert-from-pdf': 'Convert from PDF', 
+      'sign-and-security': 'Sign and Security',
+      'view-and-edit': 'View and Edit',
+      'advanced': 'Advanced'
+    };
+
+    // Legacy contact tabs
+    const contactTitles: Record<string, string> = {
       contacts: 'Contacts',
       companies: 'Companies',
       deals: 'Deals',
       tasks: 'Tasks'
     };
-    return titles[this.props.activeTab] || 'Contacts';
+
+    return pdfToolTitles[this.props.activeTab] || contactTitles[this.props.activeTab] || 'PDF Tools';
+  }
+
+  private isPDFToolsTab(tab: string): boolean {
+    const pdfToolTabs = ['organise', 'convert-to-pdf', 'convert-from-pdf', 'sign-and-security', 'view-and-edit', 'advanced'];
+    return pdfToolTabs.includes(tab);
   }
 
   private bindEvents(): void {

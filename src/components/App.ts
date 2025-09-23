@@ -97,7 +97,14 @@ export class App extends BaseRippleComponent {
   }
 
   private getFilteredTools(): PDFTool[] {
-    let filtered = filterPDFTools(this.state.tools, this.state.filters);
+    // Auto-filter by category based on active tab
+    const categoryFilters = this.getCategoryFiltersForActiveTab();
+    const mergedFilters = {
+      ...this.state.filters,
+      categories: categoryFilters.length > 0 ? categoryFilters : this.state.filters.categories
+    };
+    
+    let filtered = filterPDFTools(this.state.tools, mergedFilters);
     filtered = sortPDFTools(filtered, this.state.sortBy);
     
     // Update total items for pagination
@@ -107,8 +114,29 @@ export class App extends BaseRippleComponent {
   }
 
   private getAllFilteredTools(): PDFTool[] {
-    let filtered = filterPDFTools(this.state.tools, this.state.filters);
+    // Auto-filter by category based on active tab
+    const categoryFilters = this.getCategoryFiltersForActiveTab();
+    const mergedFilters = {
+      ...this.state.filters,
+      categories: categoryFilters.length > 0 ? categoryFilters : this.state.filters.categories
+    };
+    
+    let filtered = filterPDFTools(this.state.tools, mergedFilters);
     return sortPDFTools(filtered, this.state.sortBy);
+  }
+
+  private getCategoryFiltersForActiveTab(): string[] {
+    // Map navigation tabs to PDF tool categories
+    const tabCategoryMap: Record<string, string[]> = {
+      'organise': ['organise'],
+      'convert-to-pdf': ['convert-to-pdf'],
+      'convert-from-pdf': ['convert-from-pdf'],
+      'sign-and-security': ['sign-and-security'],
+      'view-and-edit': ['view-and-edit'],
+      'advanced': ['advanced']
+    };
+    
+    return tabCategoryMap[this.state.activeTab] || [];
   }
 
   private handleTabChange(tab: string): void {

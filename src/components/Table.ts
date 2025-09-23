@@ -1,19 +1,20 @@
 import { BaseRippleComponent } from '../types/ripple';
-import { Contact, TableColumn } from '../types/app';
+import { Contact, TableColumn, PDFTool, ToolTableColumn } from '../types/app';
 import { formatDate } from '../utils/helpers';
 import './Table.css';
 
+// Interface for both Contact and PDFTool compatibility
 export interface TableProps {
-  contacts: Contact[];
+  contacts: (Contact | PDFTool)[];
   selectedContacts: Set<string>;
-  sortBy: { column: keyof Contact; direction: 'asc' | 'desc' };
+  sortBy: { column: keyof (Contact | PDFTool); direction: 'asc' | 'desc' };
   onSelectionChange: (selectedIds: Set<string>) => void;
-  onSortChange: (column: keyof Contact) => void;
+  onSortChange: (column: keyof (Contact | PDFTool)) => void;
   onContactAction: (contactId: string, action: string) => void;
 }
 
 export class Table extends BaseRippleComponent {
-  private columns: TableColumn[] = [
+  private contactColumns: TableColumn[] = [
     { key: 'name', label: 'Name', sortable: true, width: '20%' },
     { key: 'email', label: 'Email', sortable: true, width: '20%' },
     { key: 'phone', label: 'Phone', sortable: false, width: '15%' },
@@ -22,14 +23,34 @@ export class Table extends BaseRippleComponent {
     { key: 'lastContact', label: 'Last Contact', sortable: true, width: '10%' }
   ];
 
+  private toolColumns: ToolTableColumn[] = [
+    { key: 'name', label: 'Tool Name', sortable: true, width: '25%' },
+    { key: 'description', label: 'Description', sortable: false, width: '35%' },
+    { key: 'category', label: 'Category', sortable: true, width: '15%' },
+    { key: 'ghostscriptCompatible', label: 'Ghostscript', sortable: true, width: '10%' },
+    { key: 'popularity', label: 'Popularity', sortable: true, width: '10%' }
+  ];
+
   constructor(props: TableProps) {
     super({ className: 'contacts-table-container', props });
   }
 
+  private isPDFTool(item: Contact | PDFTool): item is PDFTool {
+    return 'description' in item && 'category' in item && 'ghostscriptCompatible' in item;
+  }
+
+  private isContact(item: Contact | PDFTool): item is Contact {
+    return 'email' in item && 'phone' in item && 'company' in item;
+  }
+
   render(): void {
     const { contacts, selectedContacts, sortBy } = this.props;
-    const allSelected = contacts.length > 0 && contacts.every((c: Contact) => selectedContacts.has(c.id));
-    const someSelected = contacts.some((c: Contact) => selectedContacts.has(c.id));
+    const allSelected = contacts.length > 0 && contacts.every((c) => selectedContacts.has(c.id));
+    const someSelected = contacts.some((c) => selectedContacts.has(c.id));
+    
+    // Determine if we're showing PDF tools or contacts
+    const showingPDFTools = contacts.length > 0 && this.isPDFTool(contacts[0]);
+    const columns = showingPDFTools ? this.toolColumns : this.contactColumns;
 
     this.element.innerHTML = `
       <div class="table-wrapper">
@@ -44,7 +65,7 @@ export class Table extends BaseRippleComponent {
                   ${someSelected && !allSelected ? 'data-indeterminate="true"' : ''}
                 />
               </th>
-              ${this.columns.map(column => `
+              ${columns.map(column => `
                 <th 
                   class="table-header ${column.sortable ? 'sortable' : ''} ${sortBy.column === column.key ? 'sorted' : ''}"
                   data-column="${column.key}"
@@ -66,54 +87,21 @@ export class Table extends BaseRippleComponent {
           <tbody>
             ${contacts.length === 0 ? `
               <tr>
-                <td colspan="${this.columns.length + 2}" class="empty-state">
+                <td colspan="${columns.length + 2}" class="empty-state">
                   <div class="empty-content">
-                    <p>No contacts found</p>
+                    <p>No ${showingPDFTools ? 'PDF tools' : 'contacts'} found</p>
                     <p class="empty-description">Try adjusting your search or filters</p>
                   </div>
                 </td>
               </tr>
-            ` : contacts.map((contact: Contact) => `
-              <tr class="table-row ${selectedContacts.has(contact.id) ? 'selected' : ''}">
-                <td class="select-column">
-                  <input 
-                    type="checkbox" 
-                    class="checkbox row-select"
-                    data-contact-id="${contact.id}"
-                    ${selectedContacts.has(contact.id) ? 'checked' : ''}
-                  />
-                </td>
-                <td class="name-cell">
-                  <div class="contact-info">
-                    <div class="contact-avatar">${contact.name.charAt(0).toUpperCase()}</div>
-                    <div class="contact-details">
-                      <div class="contact-name">${contact.name}</div>
-                      <div class="contact-status">
-                        <span class="status-badge status-${contact.status}">${contact.status}</span>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td class="email-cell">${contact.email}</td>
-                <td class="phone-cell">${contact.phone}</td>
-                <td class="company-cell">${contact.company}</td>
-                <td class="role-cell">${contact.role}</td>
-                <td class="date-cell">${formatDate(contact.lastContact)}</td>
-                <td class="actions-cell">
-                  <div class="table-actions">
-                    <div class="contact-tags">
-                      ${contact.tags.slice(0, 2).map((tag: string) => `
-                        <span class="tag">${tag}</span>
-                      `).join('')}
-                      ${contact.tags.length > 2 ? `<span class="tag">+${contact.tags.length - 2}</span>` : ''}
-                    </div>
-                    <button class="btn btn-ghost btn-sm more-actions" data-contact-id="${contact.id}">
-                      ${this.createIcon('more').outerHTML}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
+            ` : contacts.map((item) => {
+              if (showingPDFTools && this.isPDFTool(item)) {
+                return this.renderPDFToolRow(item, selectedContacts);
+              } else if (!showingPDFTools && this.isContact(item)) {
+                return this.renderContactRow(item, selectedContacts);
+              }
+              return '';
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -121,6 +109,106 @@ export class Table extends BaseRippleComponent {
 
     this.bindEvents();
     this.updateIndeterminateState();
+  }
+
+  private renderPDFToolRow(tool: PDFTool, selectedContacts: Set<string>): string {
+    return `
+      <tr class="table-row ${selectedContacts.has(tool.id) ? 'selected' : ''}">
+        <td class="select-column">
+          <input 
+            type="checkbox" 
+            class="checkbox row-select"
+            data-contact-id="${tool.id}"
+            ${selectedContacts.has(tool.id) ? 'checked' : ''}
+          />
+        </td>
+        <td class="name-cell">
+          <div class="contact-info">
+            <div class="contact-avatar">${tool.name.charAt(0).toUpperCase()}</div>
+            <div class="contact-details">
+              <div class="contact-name">${tool.name}</div>
+              <div class="contact-status">
+                <span class="status-badge status-${tool.ghostscriptCompatible ? 'active' : 'inactive'}">
+                  ${tool.ghostscriptCompatible ? 'Ghostscript' : 'No Ghostscript'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td class="description-cell">${tool.description}</td>
+        <td class="category-cell">
+          <span class="category-badge">${tool.category.replace('-', ' ')}</span>
+        </td>
+        <td class="ghostscript-cell">
+          <span class="compatibility-badge ${tool.ghostscriptCompatible ? 'compatible' : 'incompatible'}">
+            ${tool.ghostscriptCompatible ? '✓' : '✗'}
+          </span>
+        </td>
+        <td class="popularity-cell">
+          <div class="popularity-bar">
+            <div class="popularity-fill" style="width: ${tool.popularity}%"></div>
+            <span class="popularity-text">${tool.popularity}</span>
+          </div>
+        </td>
+        <td class="actions-cell">
+          <div class="table-actions">
+            <div class="contact-tags">
+              ${tool.tags.slice(0, 2).map((tag: string) => `
+                <span class="tag">${tag}</span>
+              `).join('')}
+              ${tool.tags.length > 2 ? `<span class="tag">+${tool.tags.length - 2}</span>` : ''}
+            </div>
+            <button class="btn btn-ghost btn-sm more-actions" data-contact-id="${tool.id}">
+              ${this.createIcon('more').outerHTML}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  private renderContactRow(contact: Contact, selectedContacts: Set<string>): string {
+    return `
+      <tr class="table-row ${selectedContacts.has(contact.id) ? 'selected' : ''}">
+        <td class="select-column">
+          <input 
+            type="checkbox" 
+            class="checkbox row-select"
+            data-contact-id="${contact.id}"
+            ${selectedContacts.has(contact.id) ? 'checked' : ''}
+          />
+        </td>
+        <td class="name-cell">
+          <div class="contact-info">
+            <div class="contact-avatar">${contact.name.charAt(0).toUpperCase()}</div>
+            <div class="contact-details">
+              <div class="contact-name">${contact.name}</div>
+              <div class="contact-status">
+                <span class="status-badge status-${contact.status}">${contact.status}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td class="email-cell">${contact.email}</td>
+        <td class="phone-cell">${contact.phone}</td>
+        <td class="company-cell">${contact.company}</td>
+        <td class="role-cell">${contact.role}</td>
+        <td class="date-cell">${formatDate(contact.lastContact)}</td>
+        <td class="actions-cell">
+          <div class="table-actions">
+            <div class="contact-tags">
+              ${contact.tags.slice(0, 2).map((tag: string) => `
+                <span class="tag">${tag}</span>
+              `).join('')}
+              ${contact.tags.length > 2 ? `<span class="tag">+${contact.tags.length - 2}</span>` : ''}
+            </div>
+            <button class="btn btn-ghost btn-sm more-actions" data-contact-id="${contact.id}">
+              ${this.createIcon('more').outerHTML}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
   }
 
   private bindEvents(): void {
@@ -132,7 +220,7 @@ export class Table extends BaseRippleComponent {
         const newSelection = new Set<string>();
         
         if (checked) {
-          this.props.contacts.forEach((contact: Contact) => newSelection.add(contact.id));
+          this.props.contacts.forEach((item) => newSelection.add(item.id));
         }
         
         if (this.props.onSelectionChange) {
@@ -167,7 +255,7 @@ export class Table extends BaseRippleComponent {
     const sortableHeaders = this.element.querySelectorAll('.sortable');
     sortableHeaders.forEach(header => {
       header.addEventListener('click', (e) => {
-        const column = (e.currentTarget as HTMLElement).dataset.column as keyof Contact;
+        const column = (e.currentTarget as HTMLElement).dataset.column as keyof (Contact | PDFTool);
         if (column && this.props.onSortChange) {
           this.props.onSortChange(column);
         }
@@ -191,8 +279,8 @@ export class Table extends BaseRippleComponent {
     const selectAllCheckbox = this.element.querySelector('.select-all') as HTMLInputElement;
     if (selectAllCheckbox) {
       const { contacts, selectedContacts } = this.props;
-      const allSelected = contacts.length > 0 && contacts.every((c: Contact) => selectedContacts.has(c.id));
-      const someSelected = contacts.some((c: Contact) => selectedContacts.has(c.id));
+      const allSelected = contacts.length > 0 && contacts.every((c) => selectedContacts.has(c.id));
+      const someSelected = contacts.some((c) => selectedContacts.has(c.id));
       
       selectAllCheckbox.indeterminate = someSelected && !allSelected;
     }
