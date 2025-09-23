@@ -1,7 +1,7 @@
 import { BaseRippleComponent } from '../types/ripple';
-import { AppState, Contact, FilterOptions } from '../types/app';
-import { mockContacts } from '../utils/mockData';
-import { filterContacts, sortContacts, paginateContacts, debounce } from '../utils/helpers';
+import { AppState, PDFTool, ToolFilterOptions } from '../types/app';
+import { mockPDFTools } from '../utils/mockData';
+import { filterPDFTools, sortPDFTools, paginatePDFTools, debounce } from '../utils/helpers';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Table } from './Table';
@@ -10,19 +10,19 @@ import './App.css';
 
 export class App extends BaseRippleComponent {
   private state: AppState = {
-    contacts: mockContacts,
-    selectedContacts: new Set(),
-    activeTab: 'contacts',
+    tools: mockPDFTools,
+    selectedTools: new Set(),
+    activeTab: 'organise',
     filters: {
       search: '',
-      tags: [],
-      status: [],
-      dateRange: { start: null, end: null }
+      categories: [],
+      ghostscriptOnly: false,
+      tags: []
     },
     pagination: {
       currentPage: 1,
       itemsPerPage: 25,
-      totalItems: mockContacts.length
+      totalItems: mockPDFTools.length
     },
     sortBy: {
       column: 'name',
@@ -55,12 +55,12 @@ export class App extends BaseRippleComponent {
     });
 
     this.table = new Table({
-      contacts: this.getFilteredContacts(),
-      selectedContacts: this.state.selectedContacts,
+      contacts: this.getFilteredTools(),
+      selectedContacts: this.state.selectedTools,
       sortBy: this.state.sortBy,
       onSelectionChange: this.handleSelectionChange.bind(this),
       onSortChange: this.handleSortChange.bind(this),
-      onContactAction: this.handleContactAction.bind(this)
+      onContactAction: this.handleToolAction.bind(this)
     });
 
     this.pagination = new Pagination({
@@ -96,19 +96,19 @@ export class App extends BaseRippleComponent {
     if (paginationContainer) this.pagination.mount(paginationContainer as HTMLElement);
   }
 
-  private getFilteredContacts(): Contact[] {
-    let filtered = filterContacts(this.state.contacts, this.state.filters);
-    filtered = sortContacts(filtered, this.state.sortBy);
+  private getFilteredTools(): PDFTool[] {
+    let filtered = filterPDFTools(this.state.tools, this.state.filters);
+    filtered = sortPDFTools(filtered, this.state.sortBy);
     
     // Update total items for pagination
     this.state.pagination.totalItems = filtered.length;
     
-    return paginateContacts(filtered, this.state.pagination.currentPage, this.state.pagination.itemsPerPage);
+    return paginatePDFTools(filtered, this.state.pagination.currentPage, this.state.pagination.itemsPerPage);
   }
 
-  private getAllFilteredContacts(): Contact[] {
-    let filtered = filterContacts(this.state.contacts, this.state.filters);
-    return sortContacts(filtered, this.state.sortBy);
+  private getAllFilteredTools(): PDFTool[] {
+    let filtered = filterPDFTools(this.state.tools, this.state.filters);
+    return sortPDFTools(filtered, this.state.sortBy);
   }
 
   private handleTabChange(tab: string): void {
@@ -116,23 +116,23 @@ export class App extends BaseRippleComponent {
     this.updateComponents();
   }
 
-  private updateFilters(filters: Partial<FilterOptions>): void {
+  private updateFilters(filters: Partial<ToolFilterOptions>): void {
     this.state.filters = { ...this.state.filters, ...filters };
     this.state.pagination.currentPage = 1; // Reset to first page when filtering
-    this.state.selectedContacts.clear(); // Clear selection when filtering
+    this.state.selectedTools.clear(); // Clear selection when filtering
     this.updateComponents();
   }
 
-  private handleFilterChange(filters: Partial<FilterOptions>): void {
+  private handleFilterChange(filters: Partial<ToolFilterOptions>): void {
     this.updateFilters(filters);
   }
 
   private handleSelectionChange(selectedIds: Set<string>): void {
-    this.state.selectedContacts = selectedIds;
+    this.state.selectedTools = selectedIds;
     this.updateComponents();
   }
 
-  private handleSortChange(column: keyof Contact): void {
+  private handleSortChange(column: keyof PDFTool): void {
     if (this.state.sortBy.column === column) {
       // Toggle direction if same column
       this.state.sortBy.direction = this.state.sortBy.direction === 'asc' ? 'desc' : 'asc';
@@ -154,15 +154,15 @@ export class App extends BaseRippleComponent {
     this.updateComponents();
   }
 
-  private handleContactAction(contactId: string, action: string): void {
-    console.log(`Action ${action} for contact ${contactId}`);
-    // TODO: Implement context menu actions
+  private handleToolAction(toolId: string, action: string): void {
+    console.log(`Action ${action} for tool ${toolId}`);
+    // TODO: Implement context menu actions for PDF tools
   }
 
   private updateComponents(): void {
     // Update pagination total items based on filtered results
-    const allFilteredContacts = this.getAllFilteredContacts();
-    this.state.pagination.totalItems = allFilteredContacts.length;
+    const allFilteredTools = this.getAllFilteredTools();
+    this.state.pagination.totalItems = allFilteredTools.length;
 
     // Update each component with new props
     this.sidebar.update({
@@ -175,8 +175,8 @@ export class App extends BaseRippleComponent {
     });
 
     this.table.update({
-      contacts: this.getFilteredContacts(),
-      selectedContacts: this.state.selectedContacts,
+      contacts: this.getFilteredTools(),
+      selectedContacts: this.state.selectedTools,
       sortBy: this.state.sortBy
     });
 

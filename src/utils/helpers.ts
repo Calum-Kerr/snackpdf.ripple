@@ -1,6 +1,67 @@
-import { Contact, FilterOptions } from '../types/app';
+import { Contact, FilterOptions, PDFTool, ToolFilterOptions } from '../types/app';
 
-// Utility functions for data manipulation
+// PDF Tool utility functions
+export function filterPDFTools(tools: PDFTool[], filters: ToolFilterOptions): PDFTool[] {
+  return tools.filter(tool => {
+    // Search filter
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      const searchableFields = [tool.name, tool.description, tool.category];
+      if (!searchableFields.some(field => field.toLowerCase().includes(searchTerm))) {
+        return false;
+      }
+    }
+
+    // Categories filter
+    if (filters.categories.length > 0) {
+      if (!filters.categories.includes(tool.category)) {
+        return false;
+      }
+    }
+
+    // Ghostscript compatibility filter
+    if (filters.ghostscriptOnly && !tool.ghostscriptCompatible) {
+      return false;
+    }
+
+    // Tags filter
+    if (filters.tags.length > 0) {
+      if (!filters.tags.some(tag => tool.tags.includes(tag))) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+export function sortPDFTools(tools: PDFTool[], sortBy: { column: keyof PDFTool; direction: 'asc' | 'desc' }): PDFTool[] {
+  return [...tools].sort((a, b) => {
+    const aValue = a[sortBy.column];
+    const bValue = b[sortBy.column];
+    
+    let comparison = 0;
+    
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      comparison = aValue - bValue;
+    } else if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+      comparison = aValue === bValue ? 0 : aValue ? -1 : 1;
+    } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+      comparison = aValue.localeCompare(bValue);
+    } else {
+      comparison = String(aValue).localeCompare(String(bValue));
+    }
+    
+    return sortBy.direction === 'asc' ? comparison : -comparison;
+  });
+}
+
+export function paginatePDFTools(tools: PDFTool[], page: number, itemsPerPage: number): PDFTool[] {
+  const startIndex = (page - 1) * itemsPerPage;
+  return tools.slice(startIndex, startIndex + itemsPerPage);
+}
+
+// Legacy contact utility functions (keeping for backward compatibility)
 export function filterContacts(contacts: Contact[], filters: FilterOptions): Contact[] {
   return contacts.filter(contact => {
     // Search filter
@@ -65,6 +126,7 @@ export function paginateContacts(contacts: Contact[], page: number, itemsPerPage
   return contacts.slice(startIndex, startIndex + itemsPerPage);
 }
 
+// Common utility functions
 export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
