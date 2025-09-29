@@ -69,9 +69,9 @@ export class ExtractPages extends BaseRippleComponent {
                     <span>Page Range</span>
                   </label>
                   <div class="range-inputs">
-                    <input type="number" class="page-input" placeholder="From" min="1" max="${this.totalPages || 999}">
+                    <input type="number" class="page-input" placeholder="From" min="1" max="${this.totalPages || 999}" value="1">
                     <span>to</span>
-                    <input type="number" class="page-input" placeholder="To" min="1" max="${this.totalPages || 999}">
+                    <input type="number" class="page-input" placeholder="To" min="1" max="${this.totalPages || 999}" value="${this.totalPages || 1}">
                   </div>
                 </div>
                 
@@ -230,11 +230,21 @@ export class ExtractPages extends BaseRippleComponent {
     const selectionMethods = this.element.querySelectorAll('input[name="selection-method"]');
     const oddEvenSelect = this.element.querySelector('.odd-even-select') as HTMLSelectElement;
 
-    rangeInputs.forEach(input => {
+    console.log('Binding page selection events:', {
+      rangeInputs: rangeInputs.length,
+      pageListInput: !!pageListInput,
+      selectionMethods: selectionMethods.length,
+      oddEvenSelect: !!oddEvenSelect
+    });
+
+    rangeInputs.forEach((input, index) => {
+      console.log(`Binding events to range input ${index}:`, input);
       input.addEventListener('input', () => {
+        console.log('Range input changed:', (input as HTMLInputElement).value);
         this.updateSelectedPages();
       });
       input.addEventListener('keyup', () => {
+        console.log('Range input keyup:', (input as HTMLInputElement).value);
         this.updateSelectedPages();
       });
     });
@@ -385,10 +395,15 @@ export class ExtractPages extends BaseRippleComponent {
       this.tempPath = data.tempPath;
       this.isProcessing = false;
 
-      // Initialize with first page selected by default
+      this.render();
+
+      // Initialize with first page selected by default after render
       this.selectedPages = [1];
 
-      this.render();
+      // Trigger initial page selection update
+      setTimeout(() => {
+        this.updateSelectedPages();
+      }, 100);
 
       console.log('File processed successfully. Pages:', this.totalPages);
     } catch (error) {
