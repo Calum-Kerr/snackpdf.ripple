@@ -69,9 +69,9 @@ export class ExtractPages extends BaseRippleComponent {
                     <span>Page Range</span>
                   </label>
                   <div class="range-inputs">
-                    <input type="number" class="page-input" placeholder="From" min="1" max="${this.totalPages || 999}" value="1">
+                    <input type="number" class="page-input" placeholder="From" min="1" max="${this.totalPages || 999}">
                     <span>to</span>
-                    <input type="number" class="page-input" placeholder="To" min="1" max="${this.totalPages || 999}" value="${this.totalPages || 1}">
+                    <input type="number" class="page-input" placeholder="To" min="1" max="${this.totalPages || 999}">
                   </div>
                 </div>
                 
@@ -400,9 +400,17 @@ export class ExtractPages extends BaseRippleComponent {
       // Initialize with first page selected by default after render
       this.selectedPages = [1];
 
-      // Trigger initial page selection update
+      // Set default values for range inputs and trigger update
       setTimeout(() => {
-        this.updateSelectedPages();
+        const fromInput = this.element.querySelector('.range-inputs .page-input:first-child') as HTMLInputElement;
+        const toInput = this.element.querySelector('.range-inputs .page-input:last-child') as HTMLInputElement;
+
+        if (fromInput && toInput) {
+          fromInput.value = '1';
+          toInput.value = this.totalPages.toString();
+          console.log('Set default values - From:', fromInput.value, 'To:', toInput.value);
+          this.updateSelectedPages();
+        }
       }, 100);
 
       console.log('File processed successfully. Pages:', this.totalPages);
