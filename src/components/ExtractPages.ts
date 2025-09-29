@@ -224,6 +224,19 @@ export class ExtractPages extends BaseRippleComponent {
       });
     }
 
+    // Page selection events are bound separately after file upload
+    this.bindPageSelectionEvents();
+
+    // Extract button
+    const extractBtn = this.element.querySelector('.extract-btn');
+    if (extractBtn) {
+      extractBtn.addEventListener('click', () => {
+        this.handleExtraction();
+      });
+    }
+  }
+
+  private bindPageSelectionEvents(): void {
     // Page selection methods
     const rangeInputs = this.element.querySelectorAll('.page-input');
     const pageListInput = this.element.querySelector('.page-list-input') as HTMLInputElement;
@@ -247,10 +260,15 @@ export class ExtractPages extends BaseRippleComponent {
         console.log('Range input keyup:', (input as HTMLInputElement).value);
         this.updateSelectedPages();
       });
+      input.addEventListener('change', () => {
+        console.log('Range input change:', (input as HTMLInputElement).value);
+        this.updateSelectedPages();
+      });
     });
 
     if (pageListInput) {
       pageListInput.addEventListener('input', () => {
+        console.log('Page list input changed:', pageListInput.value);
         this.updateSelectedPages();
       });
       pageListInput.addEventListener('keyup', () => {
@@ -260,23 +278,17 @@ export class ExtractPages extends BaseRippleComponent {
 
     if (oddEvenSelect) {
       oddEvenSelect.addEventListener('change', () => {
+        console.log('Odd/even select changed:', oddEvenSelect.value);
         this.updateSelectedPages();
       });
     }
 
     selectionMethods.forEach(method => {
       method.addEventListener('change', () => {
+        console.log('Selection method changed:', (method as HTMLInputElement).value);
         this.updateSelectedPages();
       });
     });
-
-    // Extract button
-    const extractBtn = this.element.querySelector('.extract-btn');
-    if (extractBtn) {
-      extractBtn.addEventListener('click', () => {
-        this.handleExtraction();
-      });
-    }
   }
 
   private updateSelectedPages(): void {
@@ -409,6 +421,10 @@ export class ExtractPages extends BaseRippleComponent {
           fromInput.value = '1';
           toInput.value = this.totalPages.toString();
           console.log('Set default values - From:', fromInput.value, 'To:', toInput.value);
+
+          // Re-bind events for the page selection elements since they're new
+          this.bindPageSelectionEvents();
+
           this.updateSelectedPages();
         }
       }, 100);
