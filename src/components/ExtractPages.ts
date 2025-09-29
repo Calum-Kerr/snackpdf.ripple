@@ -228,15 +228,28 @@ export class ExtractPages extends BaseRippleComponent {
     const rangeInputs = this.element.querySelectorAll('.page-input');
     const pageListInput = this.element.querySelector('.page-list-input') as HTMLInputElement;
     const selectionMethods = this.element.querySelectorAll('input[name="selection-method"]');
+    const oddEvenSelect = this.element.querySelector('.odd-even-select') as HTMLSelectElement;
 
     rangeInputs.forEach(input => {
       input.addEventListener('input', () => {
+        this.updateSelectedPages();
+      });
+      input.addEventListener('keyup', () => {
         this.updateSelectedPages();
       });
     });
 
     if (pageListInput) {
       pageListInput.addEventListener('input', () => {
+        this.updateSelectedPages();
+      });
+      pageListInput.addEventListener('keyup', () => {
+        this.updateSelectedPages();
+      });
+    }
+
+    if (oddEvenSelect) {
+      oddEvenSelect.addEventListener('change', () => {
         this.updateSelectedPages();
       });
     }
@@ -258,8 +271,14 @@ export class ExtractPages extends BaseRippleComponent {
 
   private updateSelectedPages(): void {
     const selectedMethod = this.element.querySelector('input[name="selection-method"]:checked') as HTMLInputElement;
-    
-    if (!selectedMethod) return;
+
+    if (!selectedMethod) {
+      console.log('No selection method found');
+      return;
+    }
+
+    console.log('Selected method:', selectedMethod.value);
+    console.log('Total pages:', this.totalPages);
 
     switch (selectedMethod.value) {
       case 'range':
@@ -273,20 +292,25 @@ export class ExtractPages extends BaseRippleComponent {
         break;
     }
 
+    console.log('Selected pages:', this.selectedPages);
     this.render();
   }
 
   private updateRangeSelection(): void {
     const fromInput = this.element.querySelector('.range-inputs .page-input:first-child') as HTMLInputElement;
     const toInput = this.element.querySelector('.range-inputs .page-input:last-child') as HTMLInputElement;
-    
+
     const from = parseInt(fromInput?.value || '0');
     const to = parseInt(toInput?.value || '0');
-    
+
+    console.log('Range selection - From:', from, 'To:', to, 'Total pages:', this.totalPages);
+
     if (from > 0 && to > 0 && from <= to && to <= this.totalPages) {
       this.selectedPages = Array.from({ length: to - from + 1 }, (_, i) => from + i);
+      console.log('Valid range, selected pages:', this.selectedPages);
     } else {
       this.selectedPages = [];
+      console.log('Invalid range, no pages selected');
     }
   }
 

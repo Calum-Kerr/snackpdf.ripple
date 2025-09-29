@@ -76,17 +76,34 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
 
     const filePath = req.file.path;
     
-    // Use Ghostscript to get PDF info - simpler approach
-    const command = `gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage "${filePath}" 2>&1 | grep -c "showpage" || gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage -c "(\\"${filePath}\\") (r) file runpdfbegin pdfpagecount = quit" 2>/dev/null || echo "1"`;
+    // Use Ghostscript to get PDF info - more reliable approach
+    const command = `gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage -c "(\\"${filePath}\\") (r) file runpdfbegin pdfpagecount = quit"`;
 
     try {
-      const { stdout } = await execAsync(command);
-      let pageCount = parseInt(stdout.trim()) || 1;
+      const { stdout, stderr } = await execAsync(command);
+      console.log('Ghostscript stdout:', stdout);
+      console.log('Ghostscript stderr:', stderr);
 
-      // Fallback: if we can't get page count, assume 1 page for demo
+      let pageCount = parseInt(stdout.trim());
+
+      // If the direct method fails, try alternative method
       if (isNaN(pageCount) || pageCount <= 0) {
-        pageCount = 1;
+        console.log('Trying alternative page count method...');
+        const altCommand = `gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage "${filePath}"`;
+        try {
+          await execAsync(altCommand);
+          // If it processes without error, try to estimate pages
+          const stats = require('fs').statSync(filePath);
+          // Rough estimate: 1 page per 50KB (very rough approximation)
+          pageCount = Math.max(1, Math.ceil(stats.size / 51200));
+          console.log('Estimated page count based on file size:', pageCount);
+        } catch (altError) {
+          console.log('Alternative method also failed, defaulting to 1 page');
+          pageCount = 1;
+        }
       }
+
+      console.log('Final page count:', pageCount);
 
       res.json({
         filename: req.file.originalname,
@@ -96,11 +113,14 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
       });
     } catch (error) {
       console.error('Ghostscript error:', error);
-      // Fallback response for demo purposes
+      // Try one more fallback - just return a reasonable default
+      const stats = require('fs').statSync(filePath);
+      const estimatedPages = Math.max(1, Math.ceil(stats.size / 51200));
+
       res.json({
         filename: req.file.originalname,
         size: req.file.size,
-        pages: 1, // Default to 1 page if we can't determine
+        pages: estimatedPages,
         tempPath: filePath
       });
     }
