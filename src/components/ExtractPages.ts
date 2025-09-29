@@ -361,6 +361,8 @@ export class ExtractPages extends BaseRippleComponent {
       this.selectedFile = file;
       this.render();
 
+      console.log('Uploading file:', file.name, 'Size:', file.size);
+
       const formData = new FormData();
       formData.append('pdf', file);
 
@@ -369,20 +371,38 @@ export class ExtractPages extends BaseRippleComponent {
         body: formData
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to analyse PDF');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to analyse PDF');
       }
 
       const data = await response.json();
-      this.totalPages = data.pages;
+      console.log('PDF info received:', data);
+
+      this.totalPages = data.pages || 1; // Ensure we have at least 1 page
       this.tempPath = data.tempPath;
       this.isProcessing = false;
+
+      // Initialize with first page selected by default
+      this.selectedPages = [1];
+
       this.render();
+
+      console.log('File processed successfully. Pages:', this.totalPages);
     } catch (error) {
       console.error('File selection error:', error);
-      alert('Failed to analyse PDF file. Please try again.');
+
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to analyse PDF file: ${errorMessage}\n\nPlease try again with a different PDF file.`);
+
       this.selectedFile = null;
       this.isProcessing = false;
+      this.totalPages = 0;
+      this.tempPath = '';
+      this.selectedPages = [];
       this.render();
     }
   }

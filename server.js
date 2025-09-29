@@ -37,7 +37,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = '/tmp/uploads';
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+      fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
+      console.log('Created upload directory:', uploadDir);
     }
     cb(null, uploadDir);
   },
@@ -47,7 +48,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
   fileFilter: (req, file, cb) => {
@@ -58,6 +59,22 @@ const upload = multer({
     }
   }
 });
+
+// Ensure output directory exists with proper permissions
+const outputDir = '/tmp/outputs';
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true, mode: 0o755 });
+  console.log('Created output directory:', outputDir);
+}
+
+// Test Ghostscript installation
+try {
+  const { execSync } = require('child_process');
+  const gsVersion = execSync('gs --version', { encoding: 'utf8' });
+  console.log('Ghostscript version:', gsVersion.trim());
+} catch (error) {
+  console.error('Ghostscript not found or not working:', error.message);
+}
 
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
@@ -75,9 +92,19 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
     }
 
     const filePath = req.file.path;
-    
-    // Use Ghostscript to get PDF info - more reliable approach
-    const command = `gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage -c "(\\"${filePath}\\") (r) file runpdfbegin pdfpagecount = quit"`;
+    console.log('Processing PDF:', filePath, 'Size:', req.file.size, 'bytes');
+
+    // Check if file exists and is readable
+    try {
+      const stats = fs.statSync(filePath);
+      console.log('File stats:', { size: stats.size, mode: stats.mode.toString(8) });
+    } catch (fileError) {
+      console.error('File access error:', fileError);
+      return res.status(500).json({ error: 'Cannot access uploaded file' });
+    }
+
+    // Use simpler Ghostscript command - remove complex escaping
+    const command = `gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage -c "(${filePath}) (r) file runpdfbegin pdfpagecount = quit"`;
 
     try {
       const { stdout, stderr } = await execAsync(command);
@@ -126,7 +153,7 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
     }
   } catch (error) {
     console.error('PDF info error:', error);
-    res.status(500).json({ error: 'Failed to process PDF' });
+    res.status(500).json({ error: 'Failed to process PDF: ' + error.message });
   }
 });
 
