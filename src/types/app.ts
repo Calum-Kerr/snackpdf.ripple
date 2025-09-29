@@ -5,8 +5,6 @@ export interface PDFTool {
   description: string;
   category: string;
   icon: string;
-  ghostscriptCompatible: boolean;
-  popularity: number;
   tags: string[];
 }
 
@@ -58,13 +56,14 @@ export interface AppState {
   filters: ToolFilterOptions;
   pagination: PaginationState;
   sortBy: {
-    column: keyof PDFTool;
+    column: string;
     direction: 'asc' | 'desc';
   };
   featureRequests: FeatureRequest[];
   showFeatureRequests: boolean;
   currentUser: string;
   showLegalPage: string | null;
+  currentTool: string | null;
 }
 
 // Legacy Contact interface for backward compatibility during transition

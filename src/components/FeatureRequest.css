@@ -13,6 +13,11 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+.header-content .back-btn {
+  margin-bottom: var(--spacing-md);
+  align-self: flex-start;
+}
+
 .header-content h2 {
   font-size: 1.75rem;
   font-weight: 600;
@@ -43,7 +48,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
 }
 
 .submit-form {
@@ -294,14 +299,22 @@
   color: #991b1b;
 }
 
-.request-category {
+.request-category-btn {
   background-color: var(--color-bg-tertiary);
-  color: var(--color-text-secondary);
+  color: var(--color-primary);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 500;
   text-transform: capitalize;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.request-category-btn:hover {
+  background-color: var(--color-primary);
+  color: white;
 }
 
 .request-description {

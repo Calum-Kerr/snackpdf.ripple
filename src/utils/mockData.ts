@@ -1,6 +1,6 @@
 import { Contact, PDFTool, FeatureRequest } from '../types/app';
 
-// Mock PDF Tools data based on Ghostscript-compatible Stirling PDF features
+// Mock PDF Tools data
 export const mockPDFTools: PDFTool[] = [
   // Organise category
   {
@@ -8,9 +8,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Merge PDFs',
     description: 'Combine multiple PDF files into a single document',
     category: 'organise',
-    icon: 'add_to_photos',
-    ghostscriptCompatible: true,
-    popularity: 95,
+    icon: 'merge.svg',
     tags: ['merge', 'combine', 'essential']
   },
   {
@@ -18,9 +16,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Split PDF',
     description: 'Split a PDF document into multiple files',
     category: 'organise',
-    icon: 'cut',
-    ghostscriptCompatible: true,
-    popularity: 90,
+    icon: 'split.svg',
     tags: ['split', 'separate', 'essential']
   },
   {
@@ -28,9 +24,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Extract Pages',
     description: 'Extract specific pages from a PDF document',
     category: 'organise',
-    icon: 'upload',
-    ghostscriptCompatible: true,
-    popularity: 85,
+    icon: 'extract.svg',
     tags: ['extract', 'pages', 'essential']
   },
   {
@@ -38,9 +32,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Rotate PDF',
     description: 'Rotate pages in a PDF document',
     category: 'organise',
-    icon: 'rotate_right',
-    ghostscriptCompatible: true,
-    popularity: 75,
+    icon: 'rotate.svg',
     tags: ['rotate', 'orientation']
   },
   {
@@ -48,9 +40,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Remove Pages',
     description: 'Remove specific pages from a PDF document',
     category: 'organise',
-    icon: 'delete',
-    ghostscriptCompatible: true,
-    popularity: 70,
+    icon: 'remove.svg',
     tags: ['remove', 'delete', 'pages']
   },
   {
@@ -58,9 +48,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Organize Pages',
     description: 'Reorder and organize pages in a PDF',
     category: 'organise',
-    icon: 'format_list_bulleted',
-    ghostscriptCompatible: true,
-    popularity: 80,
+    icon: 'sort.svg',
     tags: ['organize', 'reorder', 'pages']
   },
 
@@ -70,9 +58,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Image to PDF',
     description: 'Convert images (JPG, PNG, etc.) to PDF format',
     category: 'convert-to-pdf',
-    icon: 'picture_as_pdf',
-    ghostscriptCompatible: true,
-    popularity: 95,
+    icon: 'image_t0_pdf.svg',
     tags: ['image', 'convert', 'essential']
   },
   {
@@ -80,9 +66,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'HTML to PDF',
     description: 'Convert HTML files and web pages to PDF',
     category: 'convert-to-pdf',
-    icon: 'html',
-    ghostscriptCompatible: true,
-    popularity: 85,
+    icon: 'html_to_pdf.svg',
     tags: ['html', 'web', 'convert']
   },
   {
@@ -90,9 +74,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Markdown to PDF',
     description: 'Convert Markdown files to PDF format',
     category: 'convert-to-pdf',
-    icon: 'markdown',
-    ghostscriptCompatible: true,
-    popularity: 70,
+    icon: 'edit.svg',
     tags: ['markdown', 'convert', 'text']
   },
   {
@@ -100,9 +82,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Text to PDF',
     description: 'Convert plain text files to PDF format',
     category: 'convert-to-pdf',
-    icon: 'draft',
-    ghostscriptCompatible: true,
-    popularity: 65,
+    icon: 'edit.svg',
     tags: ['text', 'convert', 'basic']
   },
 
@@ -112,9 +92,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'PDF to Image',
     description: 'Convert PDF pages to images (PNG, JPG)',
     category: 'convert-from-pdf',
-    icon: 'photo_library',
-    ghostscriptCompatible: true,
-    popularity: 90,
+    icon: 'pdf_to_image.svg',
     tags: ['image', 'convert', 'essential']
   },
   {
@@ -122,9 +100,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'PDF to Text',
     description: 'Extract text content from PDF documents',
     category: 'convert-from-pdf',
-    icon: 'text_fields',
-    ghostscriptCompatible: true,
-    popularity: 85,
+    icon: 'edit.svg',
     tags: ['text', 'extract', 'content']
   },
   {
@@ -132,9 +108,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Extract Images',
     description: 'Extract all images from a PDF document',
     category: 'convert-from-pdf',
-    icon: 'photo_library',
-    ghostscriptCompatible: true,
-    popularity: 75,
+    icon: 'extract.svg',
     tags: ['images', 'extract', 'media']
   },
 
@@ -144,9 +118,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Add Password',
     description: 'Protect PDF with password encryption',
     category: 'sign-and-security',
-    icon: 'lock',
-    ghostscriptCompatible: true,
-    popularity: 90,
+    icon: 'password_protect.svg',
     tags: ['password', 'security', 'protect']
   },
   {
@@ -154,9 +126,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Remove Password',
     description: 'Remove password protection from PDF',
     category: 'sign-and-security',
-    icon: 'lock_open_right',
-    ghostscriptCompatible: true,
-    popularity: 80,
+    icon: 'unlock.svg',
     tags: ['password', 'unlock', 'security']
   },
   {
@@ -164,9 +134,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Change Permissions',
     description: 'Modify PDF permissions and restrictions',
     category: 'sign-and-security',
-    icon: 'encrypted',
-    ghostscriptCompatible: true,
-    popularity: 70,
+    icon: 'password_protect.svg',
     tags: ['permissions', 'security', 'restrict']
   },
 
@@ -176,9 +144,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Add Watermark',
     description: 'Add text or image watermarks to PDF',
     category: 'view-and-edit',
-    icon: 'water_drop',
-    ghostscriptCompatible: true,
-    popularity: 85,
+    icon: 'watermark.svg',
     tags: ['watermark', 'branding', 'edit']
   },
   {
@@ -186,9 +152,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Add Page Numbers',
     description: 'Add page numbers to PDF documents',
     category: 'view-and-edit',
-    icon: '123',
-    ghostscriptCompatible: true,
-    popularity: 80,
+    icon: 'page_numbers.svg',
     tags: ['pages', 'numbers', 'edit']
   },
   {
@@ -196,9 +160,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Add Stamps',
     description: 'Add stamps and annotations to PDF',
     category: 'view-and-edit',
-    icon: 'approval',
-    ghostscriptCompatible: true,
-    popularity: 75,
+    icon: 'sign.svg',
     tags: ['stamps', 'annotations', 'edit']
   },
   {
@@ -206,9 +168,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Flatten PDF',
     description: 'Flatten form fields and annotations',
     category: 'view-and-edit',
-    icon: 'layers_clear',
-    ghostscriptCompatible: true,
-    popularity: 60,
+    icon: 'flatten.svg',
     tags: ['flatten', 'forms', 'finalize']
   },
 
@@ -218,9 +178,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Compress PDF',
     description: 'Reduce PDF file size while maintaining quality',
     category: 'advanced',
-    icon: 'zoom_in_map',
-    ghostscriptCompatible: true,
-    popularity: 95,
+    icon: 'compress.svg',
     tags: ['compress', 'optimize', 'essential']
   },
   {
@@ -228,9 +186,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'OCR / Cleanup Scans',
     description: 'Convert scanned documents to searchable text',
     category: 'advanced',
-    icon: 'quick_reference_all',
-    ghostscriptCompatible: true,
-    popularity: 85,
+    icon: 'ocr.svg',
     tags: ['ocr', 'scans', 'text']
   },
   {
@@ -238,9 +194,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'PDF to PDF/A',
     description: 'Convert to PDF/A archival format',
     category: 'advanced',
-    icon: 'picture_as_pdf',
-    ghostscriptCompatible: true,
-    popularity: 70,
+    icon: 'pdf_to_pdfA.svg',
     tags: ['pdfa', 'archive', 'standard']
   },
   {
@@ -248,9 +202,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Repair PDF',
     description: 'Attempt to repair corrupted PDF files',
     category: 'advanced',
-    icon: 'build',
-    ghostscriptCompatible: true,
-    popularity: 65,
+    icon: 'repair.svg',
     tags: ['repair', 'fix', 'corrupted']
   },
   {
@@ -258,9 +210,7 @@ export const mockPDFTools: PDFTool[] = [
     name: 'Remove Blank Pages',
     description: 'Automatically detect and remove blank pages',
     category: 'advanced',
-    icon: 'scan_delete',
-    ghostscriptCompatible: true,
-    popularity: 75,
+    icon: 'remove.svg',
     tags: ['blank', 'remove', 'cleanup']
   }
 ];

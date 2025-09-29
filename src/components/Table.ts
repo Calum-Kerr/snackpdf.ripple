@@ -7,9 +7,9 @@ import './Table.css';
 export interface TableProps {
   contacts: (Contact | PDFTool)[];
   selectedContacts: Set<string>;
-  sortBy: { column: keyof (Contact | PDFTool); direction: 'asc' | 'desc' };
+  sortBy: { column: string; direction: 'asc' | 'desc' };
   onSelectionChange: (selectedIds: Set<string>) => void;
-  onSortChange: (column: keyof (Contact | PDFTool)) => void;
+  onSortChange: (column: string) => void;
   onContactAction: (contactId: string, action: string) => void;
 }
 
@@ -25,9 +25,8 @@ export class Table extends BaseRippleComponent {
 
   private toolColumns: ToolTableColumn[] = [
     { key: 'name', label: 'Tool Name', sortable: true, width: '30%' },
-    { key: 'description', label: 'Description', sortable: false, width: '40%' },
-    { key: 'category', label: 'Category', sortable: true, width: '15%' },
-    { key: 'popularity', label: 'Popularity', sortable: true, width: '15%' }
+    { key: 'description', label: 'Description', sortable: false, width: '50%' },
+    { key: 'tags', label: 'Tags', sortable: false, width: '20%' }
   ];
 
   constructor(props: TableProps) {
@@ -35,7 +34,7 @@ export class Table extends BaseRippleComponent {
   }
 
   private isPDFTool(item: Contact | PDFTool): item is PDFTool {
-    return 'description' in item && 'category' in item && 'ghostscriptCompatible' in item;
+    return 'description' in item && 'category' in item && 'tags' in item;
   }
 
   private isContact(item: Contact | PDFTool): item is Contact {
@@ -44,8 +43,6 @@ export class Table extends BaseRippleComponent {
 
   render(): void {
     const { contacts, selectedContacts, sortBy } = this.props;
-    const allSelected = contacts.length > 0 && contacts.every((c) => selectedContacts.has(c.id));
-    const someSelected = contacts.some((c) => selectedContacts.has(c.id));
     
     // Determine if we're showing PDF tools or contacts
     const showingPDFTools = contacts.length > 0 && this.isPDFTool(contacts[0]);
@@ -56,14 +53,6 @@ export class Table extends BaseRippleComponent {
         <table class="contacts-table">
           <thead>
             <tr>
-              <th class="select-column">
-                <input 
-                  type="checkbox" 
-                  class="checkbox select-all"
-                  ${allSelected ? 'checked' : ''}
-                  ${someSelected && !allSelected ? 'data-indeterminate="true"' : ''}
-                />
-              </th>
               ${columns.map(column => `
                 <th 
                   class="table-header ${column.sortable ? 'sortable' : ''} ${sortBy.column === column.key ? 'sorted' : ''}"
@@ -79,20 +68,19 @@ export class Table extends BaseRippleComponent {
                   </div>
                 </th>
               `).join('')}
-              <th class="actions-column">Actions</th>
             </tr>
           </thead>
           <tbody>
             ${contacts.length === 0 ? `
               <tr>
-                <td colspan="${columns.length + 2}" class="empty-state">
+                <td colspan="${columns.length}" class="empty-state">
                   <div class="empty-content">
                     <p>No ${showingPDFTools ? 'PDF tools' : 'contacts'} found</p>
                     <p class="empty-description">Try adjusting your search or filters</p>
                   </div>
                 </td>
               </tr>
-            ` : contacts.map((item) => {
+            ` : contacts.map((item: Contact | PDFTool) => {
               if (showingPDFTools && this.isPDFTool(item)) {
                 return this.renderPDFToolRow(item, selectedContacts);
               } else if (!showingPDFTools && this.isContact(item)) {
@@ -109,46 +97,28 @@ export class Table extends BaseRippleComponent {
     this.updateIndeterminateState();
   }
 
-  private renderPDFToolRow(tool: PDFTool, selectedContacts: Set<string>): string {
+  private renderPDFToolRow(tool: PDFTool, _selectedContacts: Set<string>): string {
     return `
-      <tr class="table-row ${selectedContacts.has(tool.id) ? 'selected' : ''}">
-        <td class="select-column">
-          <input 
-            type="checkbox" 
-            class="checkbox row-select"
-            data-contact-id="${tool.id}"
-            ${selectedContacts.has(tool.id) ? 'checked' : ''}
-          />
-        </td>
+      <tr class="table-row tool-row" data-tool-id="${tool.id}">
         <td class="name-cell">
-          <div class="contact-info">
-            <div class="contact-avatar">${tool.name.charAt(0).toUpperCase()}</div>
-            <div class="contact-details">
-              <div class="contact-name">${tool.name}</div>
+          <div class="tool-info">
+            <div class="tool-avatar" style="background-image: url('/${tool.icon}');">
+            </div>
+            <div class="tool-details">
+              <div class="tool-name">${tool.name}</div>
+              <div class="tool-category">${tool.category.replace('-', ' ')}</div>
             </div>
           </div>
         </td>
-        <td class="description-cell">${tool.description}</td>
-        <td class="category-cell">
-          <span class="category-badge">${tool.category.replace('-', ' ')}</span>
+        <td class="description-cell">
+          <div class="tool-description">${tool.description}</div>
         </td>
-        <td class="popularity-cell">
-          <div class="popularity-bar">
-            <div class="popularity-fill" style="width: ${tool.popularity}%"></div>
-            <span class="popularity-text">${tool.popularity}</span>
-          </div>
-        </td>
-        <td class="actions-cell">
-          <div class="table-actions">
-            <div class="contact-tags">
-              ${tool.tags.slice(0, 2).map((tag: string) => `
-                <span class="tag">${tag}</span>
-              `).join('')}
-              ${tool.tags.length > 2 ? `<span class="tag">+${tool.tags.length - 2}</span>` : ''}
-            </div>
-            <button class="btn btn-ghost btn-sm more-actions" data-contact-id="${tool.id}">
-              ⋯
-            </button>
+        <td class="tags-cell">
+          <div class="tool-tags">
+            ${tool.tags.slice(0, 3).map((tag: string) => `
+              <span class="tag">${tag}</span>
+            `).join('')}
+            ${tool.tags.length > 3 ? `<span class="tag-more">+${tool.tags.length - 3}</span>` : ''}
           </div>
         </td>
       </tr>
@@ -208,7 +178,7 @@ export class Table extends BaseRippleComponent {
         const newSelection = new Set<string>();
         
         if (checked) {
-          this.props.contacts.forEach((item) => newSelection.add(item.id));
+          this.props.contacts.forEach((item: Contact | PDFTool) => newSelection.add(item.id));
         }
         
         if (this.props.onSelectionChange) {
@@ -250,14 +220,13 @@ export class Table extends BaseRippleComponent {
       });
     });
 
-    // More actions buttons
-    const moreButtons = this.element.querySelectorAll('.more-actions');
-    moreButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const contactId = (e.currentTarget as HTMLElement).dataset.contactId;
-        if (contactId && this.props.onContactAction) {
-          this.props.onContactAction(contactId, 'more');
+    // Tool row clicks
+    const toolRows = this.element.querySelectorAll('.tool-row');
+    toolRows.forEach(row => {
+      row.addEventListener('click', (e) => {
+        const toolId = (e.currentTarget as HTMLElement).dataset.toolId;
+        if (toolId && this.props.onContactAction) {
+          this.props.onContactAction(toolId, 'open');
         }
       });
     });
@@ -267,8 +236,8 @@ export class Table extends BaseRippleComponent {
     const selectAllCheckbox = this.element.querySelector('.select-all') as HTMLInputElement;
     if (selectAllCheckbox) {
       const { contacts, selectedContacts } = this.props;
-      const allSelected = contacts.length > 0 && contacts.every((c) => selectedContacts.has(c.id));
-      const someSelected = contacts.some((c) => selectedContacts.has(c.id));
+      const allSelected = contacts.length > 0 && contacts.every((c: Contact | PDFTool) => selectedContacts.has(c.id));
+      const someSelected = contacts.some((c: Contact | PDFTool) => selectedContacts.has(c.id));
       
       selectAllCheckbox.indeterminate = someSelected && !allSelected;
     }

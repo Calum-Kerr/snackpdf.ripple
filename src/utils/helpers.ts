@@ -30,10 +30,10 @@ export function filterPDFTools(tools: PDFTool[], filters: ToolFilterOptions): PD
   });
 }
 
-export function sortPDFTools(tools: PDFTool[], sortBy: { column: keyof PDFTool; direction: 'asc' | 'desc' }): PDFTool[] {
+export function sortPDFTools(tools: PDFTool[], sortBy: { column: string; direction: 'asc' | 'desc' }): PDFTool[] {
   return [...tools].sort((a, b) => {
-    const aValue = a[sortBy.column];
-    const bValue = b[sortBy.column];
+    const aValue = (a as any)[sortBy.column];
+    const bValue = (b as any)[sortBy.column];
     
     let comparison = 0;
     

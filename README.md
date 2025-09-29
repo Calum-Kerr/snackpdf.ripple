@@ -20,7 +20,7 @@ A modern, production-quality Progressive Web Application (PWA) built with a cust
 - **SSR-Ready Architecture**: Structured for easy server-side rendering adoption
 - **Modern Build System**: Vite-powered development and production builds
 - **Type Safety**: Full TypeScript implementation with strict checking
-- **Ghostscript Compatible**: Tools designed to work with Ghostscript for reliable PDF processing
+- **Professional PDF Processing**: Tools designed for reliable and high-quality PDF processing
 
 ## Quick Start
 
@@ -233,7 +233,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Component Composition**: Modular, reusable UI components
 
 ### Future Enhancements
-- Real PDF processing integration with Ghostscript
+- Real PDF processing integration with advanced processing engines
 - Advanced tool filtering with multiple criteria
 - Bulk PDF operations support
 - Export/import functionality for tool configurations
@@ -242,4 +242,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ using the Ripple component system**
+**Built with love using the Ripple component system**

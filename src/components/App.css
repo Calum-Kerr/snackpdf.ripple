@@ -1,7 +1,6 @@
 .app-layout {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
   background-color: var(--color-bg-secondary);
 }
 
@@ -39,12 +38,12 @@
 .content-area {
   flex: 1;
   padding: var(--spacing-lg);
-  overflow: auto;
   background-color: var(--color-bg-secondary);
+  min-height: 100vh;
 }
 
 .footer-container {
-  margin-top: auto;
+  /* Footer will naturally flow after content */
 }
 
 .table-section {

@@ -6,6 +6,8 @@ export interface FeatureRequestProps {
   featureRequests: FeatureRequest[];
   onVote: (requestId: string) => void;
   onSubmitRequest: (request: Omit<FeatureRequest, 'id' | 'submittedAt' | 'votes' | 'voters'>) => void;
+  onBack?: () => void;
+  onCategoryClick?: (category: string) => void;
   currentUser: string;
 }
 
@@ -29,6 +31,7 @@ export class FeatureRequestComponent extends BaseRippleComponent {
     this.element.innerHTML = `
       <div class="feature-request-header">
         <div class="header-content">
+          <button class="btn btn-ghost back-btn">← Back to Tools</button>
           <h2>Feature Requests</h2>
           <p>Suggest new PDF tools and vote on ideas from the community</p>
         </div>
@@ -160,7 +163,7 @@ export class FeatureRequestComponent extends BaseRippleComponent {
             <h3 class="request-title">${request.title}</h3>
             <div class="request-meta">
               ${statusBadge}
-              <span class="request-category">${request.category.replace('-', ' ')}</span>
+              <button class="request-category-btn" data-category="${request.category}">${request.category.replace('-', ' ')}</button>
             </div>
           </div>
           <p class="request-description">${request.description}</p>
@@ -186,7 +189,7 @@ export class FeatureRequestComponent extends BaseRippleComponent {
       'rejected': { label: 'Rejected', class: 'status-rejected' }
     };
 
-    const config = statusConfig[status] || statusConfig['pending'];
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig['pending'];
     return `<span class="status-badge ${config.class}">${config.label}</span>`;
   }
 
@@ -209,7 +212,7 @@ export class FeatureRequestComponent extends BaseRippleComponent {
       filtered = filtered.filter(request => 
         request.title.toLowerCase().includes(searchTerm) ||
         request.description.toLowerCase().includes(searchTerm) ||
-        request.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+        request.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm))
       );
     }
 
@@ -246,6 +249,16 @@ export class FeatureRequestComponent extends BaseRippleComponent {
   }
 
   private bindEvents(): void {
+    // Back button
+    const backBtn = this.element.querySelector('.back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        if (this.props.onBack) {
+          this.props.onBack();
+        }
+      });
+    }
+
     // Submit request button
     const submitBtn = this.element.querySelector('.submit-request-btn');
     if (submitBtn) {
@@ -335,11 +348,21 @@ export class FeatureRequestComponent extends BaseRippleComponent {
         }
       });
     }
+
+    // Category button clicks
+    const categoryBtns = this.element.querySelectorAll('.request-category-btn');
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const category = (e.target as HTMLElement).dataset.category;
+        if (category && this.props.onCategoryClick) {
+          this.props.onCategoryClick(category);
+        }
+      });
+    });
   }
 
   private handleFormSubmit(): void {
     const form = this.element.querySelector('.request-form') as HTMLFormElement;
-    const formData = new FormData(form);
     
     const title = (form.querySelector('#request-title') as HTMLInputElement).value;
     const description = (form.querySelector('#request-description') as HTMLTextAreaElement).value;

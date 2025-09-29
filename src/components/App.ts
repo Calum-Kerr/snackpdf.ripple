@@ -2,11 +2,13 @@ import { BaseRippleComponent } from '../types/ripple';
 import { AppState, PDFTool, ToolFilterOptions, FeatureRequest } from '../types/app';
 import { mockPDFTools, mockFeatureRequests } from '../utils/mockData';
 import { filterPDFTools, sortPDFTools, paginatePDFTools, debounce } from '../utils/helpers';
+
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Table } from './Table';
 import { Pagination } from './Pagination';
 import { FeatureRequestComponent } from './FeatureRequest';
+import { ExtractPages } from './ExtractPages';
 import { Footer } from './Footer';
 import { LegalPages } from './LegalPages';
 import './App.css';
@@ -33,7 +35,8 @@ export class App extends BaseRippleComponent {
     featureRequests: mockFeatureRequests,
     showFeatureRequests: false,
     currentUser: 'current-user',
-    showLegalPage: null
+    showLegalPage: null,
+    currentTool: null
   };
 
   private sidebar: Sidebar;
@@ -41,6 +44,7 @@ export class App extends BaseRippleComponent {
   private table: Table;
   private pagination: Pagination;
   private featureRequestComponent: FeatureRequestComponent;
+  private extractPages: ExtractPages;
   private footer: Footer;
   private legalPages: LegalPages;
 
@@ -50,7 +54,9 @@ export class App extends BaseRippleComponent {
 
   constructor() {
     super({ className: 'app-layout' });
-    
+
+
+
     this.sidebar = new Sidebar({
       activeTab: this.state.activeTab,
       onTabChange: this.handleTabChange.bind(this)
@@ -83,7 +89,13 @@ export class App extends BaseRippleComponent {
       featureRequests: this.state.featureRequests,
       onVote: this.handleFeatureVote.bind(this),
       onSubmitRequest: this.handleSubmitFeatureRequest.bind(this),
+      onBack: this.handleBackFromFeatureRequests.bind(this),
+      onCategoryClick: this.handleCategoryNavigation.bind(this),
       currentUser: this.state.currentUser
+    });
+
+    this.extractPages = new ExtractPages({
+      onBack: this.handleBackFromTool.bind(this)
     });
 
     this.footer = new Footer({
@@ -102,9 +114,22 @@ export class App extends BaseRippleComponent {
       this.element.innerHTML = `
         <div class="legal-page-container"></div>
       `;
-      
+
       const legalContainer = this.element.querySelector('.legal-page-container');
       if (legalContainer) this.legalPages.mount(legalContainer as HTMLElement);
+      return;
+    }
+
+    // If showing a specific tool, render only the tool page
+    if (this.state.currentTool) {
+      this.element.innerHTML = `
+        <div class="tool-page-container"></div>
+      `;
+
+      const toolContainer = this.element.querySelector('.tool-page-container');
+      if (toolContainer && this.state.currentTool === 'extract-pages') {
+        this.extractPages.mount(toolContainer as HTMLElement);
+      }
       return;
     }
 
@@ -159,13 +184,13 @@ export class App extends BaseRippleComponent {
       ...this.state.filters,
       categories: categoryFilters.length > 0 ? categoryFilters : this.state.filters.categories
     };
-    
+
     let filtered = filterPDFTools(this.state.tools, mergedFilters);
     filtered = sortPDFTools(filtered, this.state.sortBy);
-    
+
     // Update total items for pagination
     this.state.pagination.totalItems = filtered.length;
-    
+
     return paginatePDFTools(filtered, this.state.pagination.currentPage, this.state.pagination.itemsPerPage);
   }
 
@@ -176,7 +201,7 @@ export class App extends BaseRippleComponent {
       ...this.state.filters,
       categories: categoryFilters.length > 0 ? categoryFilters : this.state.filters.categories
     };
-    
+
     let filtered = filterPDFTools(this.state.tools, mergedFilters);
     return sortPDFTools(filtered, this.state.sortBy);
   }
@@ -216,7 +241,7 @@ export class App extends BaseRippleComponent {
     this.updateComponents();
   }
 
-  private handleSortChange(column: keyof PDFTool): void {
+  private handleSortChange(column: string): void {
     if (this.state.sortBy.column === column) {
       // Toggle direction if same column
       this.state.sortBy.direction = this.state.sortBy.direction === 'asc' ? 'desc' : 'asc';
@@ -240,7 +265,19 @@ export class App extends BaseRippleComponent {
 
   private handleToolAction(toolId: string, action: string): void {
     console.log(`Action ${action} for tool ${toolId}`);
-    // TODO: Implement context menu actions for PDF tools
+
+    // Navigate to tool page for specific tools
+    if (action === 'open') {
+      if (toolId === 'extract-pages') {
+        this.handleNavigateToTool(toolId);
+        return;
+      }
+
+      // For other tools, show a placeholder message
+      alert(`Opening ${toolId} tool...\n\nThis would navigate to the ${toolId} tool page.`);
+    }
+
+    // TODO: Implement other tool actions
   }
 
   private updateComponents(): void {
@@ -270,7 +307,9 @@ export class App extends BaseRippleComponent {
       });
     } else {
       this.featureRequestComponent.update({
-        featureRequests: this.state.featureRequests
+        featureRequests: this.state.featureRequests,
+        onBack: this.handleBackFromFeatureRequests.bind(this),
+        onCategoryClick: this.handleCategoryNavigation.bind(this)
       });
     }
   }
@@ -297,9 +336,51 @@ export class App extends BaseRippleComponent {
       votes: 0,
       voters: []
     };
-    
+
     this.state.featureRequests.unshift(featureRequest); // Add to beginning of array
     this.updateComponents();
+  }
+
+  private handleBackFromFeatureRequests(): void {
+    this.state.showFeatureRequests = false;
+    this.render();
+  }
+
+  private handleCategoryNavigation(category: string): void {
+    // Map category to tab name
+    const categoryTabMap: Record<string, string> = {
+      'organise': 'organise',
+      'convert-to-pdf': 'convert-to-pdf',
+      'convert-from-pdf': 'convert-from-pdf',
+      'sign-and-security': 'sign-and-security',
+      'view-and-edit': 'view-and-edit',
+      'advanced': 'advanced'
+    };
+
+    const targetTab = categoryTabMap[category];
+    if (targetTab) {
+      this.state.activeTab = targetTab;
+      this.state.showFeatureRequests = false;
+      this.updateComponents();
+    }
+  }
+
+  private handleBackFromTool(): void {
+    this.state.currentTool = null;
+    this.render();
+  }
+
+  private handleNavigateToTool(toolId: string): void {
+    // Map tool IDs to tool pages
+    const toolPageMap: Record<string, string> = {
+      'extract-pages': 'extract-pages'
+    };
+
+    const toolPage = toolPageMap[toolId];
+    if (toolPage) {
+      this.state.currentTool = toolPage;
+      this.render();
+    }
   }
 
   private handleLegalPageChange(page: string): void {
