@@ -7,9 +7,9 @@ export interface ExtractPagesProps {
 
 export class ExtractPages extends BaseRippleComponent {
   private selectedFile: File | null = null;
-  private selectedPages: number[] = [];
   private totalPages: number = 0;
-  private tempPath: string = '';
+  private fromPage: number = 1;
+  private toPage: number = 1;
   private isProcessing: boolean = false;
 
   constructor(props: ExtractPagesProps) {
@@ -33,108 +33,55 @@ export class ExtractPages extends BaseRippleComponent {
       </div>
 
       <div class="tool-content">
-        <div class="upload-section">
-          <div class="upload-area ${this.selectedFile ? 'has-file' : ''}">
-            ${this.selectedFile ? `
-              <div class="file-info">
-                <div class="file-icon">📄</div>
-                <div class="file-details">
-                  <div class="file-name">${this.selectedFile.name}</div>
-                  <div class="file-size">${this.formatFileSize(this.selectedFile.size)}</div>
-                  ${this.totalPages > 0 ? `<div class="file-pages">${this.totalPages} pages</div>` : ''}
-                </div>
-                <button class="btn btn-ghost remove-file-btn">×</button>
-              </div>
-            ` : `
-              <div class="upload-prompt">
-                <div class="upload-icon">📁</div>
-                <h3>Select PDF File</h3>
-                <p>Choose a PDF file to extract pages from</p>
-                <button class="btn btn-primary select-file-btn">Select File</button>
-                <p class="upload-note">Or drag and drop a PDF file here</p>
-              </div>
-            `}
+        ${!this.selectedFile ? `
+          <div class="upload-section">
+            <div class="upload-area">
+              <div class="upload-icon">📁</div>
+              <h3>Select PDF File</h3>
+              <p>Choose a PDF file to extract pages from</p>
+              <button class="btn btn-primary select-file-btn">Select File</button>
+              <p class="upload-note">Or drag and drop a PDF file here</p>
+            </div>
             <input type="file" class="file-input" accept=".pdf" style="display: none;">
           </div>
-        </div>
-
-        ${this.selectedFile ? `
-          <div class="extraction-section">
-            <h2>Page Selection</h2>
-            <div class="page-selection">
-              <div class="selection-methods">
-                <div class="method-group">
-                  <label class="radio-label">
-                    <input type="radio" name="selection-method" value="range" checked>
-                    <span>Page Range</span>
-                  </label>
-                  <div class="range-inputs">
-                    <input type="number" class="page-input" placeholder="From" min="1" max="${this.totalPages || 999}">
-                    <span>to</span>
-                    <input type="number" class="page-input" placeholder="To" min="1" max="${this.totalPages || 999}">
-                  </div>
-                </div>
-                
-                <div class="method-group">
-                  <label class="radio-label">
-                    <input type="radio" name="selection-method" value="specific">
-                    <span>Specific Pages</span>
-                  </label>
-                  <input type="text" class="page-list-input" placeholder="e.g., 1, 3, 5-8, 10">
-                </div>
-                
-                <div class="method-group">
-                  <label class="radio-label">
-                    <input type="radio" name="selection-method" value="odd-even">
-                    <span>Odd/Even Pages</span>
-                  </label>
-                  <select class="odd-even-select">
-                    <option value="odd">Odd Pages Only</option>
-                    <option value="even">Even Pages Only</option>
-                  </select>
-                </div>
+        ` : `
+          <div class="file-section">
+            <div class="file-info">
+              <span class="file-icon">📄</span>
+              <div class="file-details">
+                <div class="file-name">${this.selectedFile.name}</div>
+                <div class="file-meta">${this.totalPages} pages • ${this.formatFileSize(this.selectedFile.size)}</div>
               </div>
-              
-              ${this.selectedPages.length > 0 ? `
-                <div class="selected-pages">
-                  <h3>Selected Pages: ${this.selectedPages.join(', ')}</h3>
-                  <p>${this.selectedPages.length} page(s) will be extracted</p>
-                </div>
-              ` : ''}
+              <button class="btn btn-ghost remove-file-btn">×</button>
             </div>
+          </div>
 
-            <div class="extraction-options">
-              <h3>Options</h3>
-              <div class="option-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" class="preserve-bookmarks" checked>
-                  <span>Preserve bookmarks for extracted pages</span>
-                </label>
+          <div class="page-selection-section">
+            <h3>Select Pages to Extract</h3>
+            <div class="simple-inputs">
+              <div class="input-group">
+                <label>From page:</label>
+                <input type="number" class="from-input" min="1" max="${this.totalPages}" value="${this.fromPage}">
               </div>
-              <div class="option-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" class="preserve-links" checked>
-                  <span>Preserve internal links</span>
-                </label>
-              </div>
-              <div class="option-group">
-                <label>Output filename:</label>
-                <input type="text" class="output-filename" value="${this.selectedFile.name.replace('.pdf', '_extracted.pdf')}">
+              <div class="input-group">
+                <label>To page:</label>
+                <input type="number" class="to-input" min="1" max="${this.totalPages}" value="${this.toPage}">
               </div>
             </div>
+            
+            <div class="selection-preview">
+              <p><strong>Will extract:</strong> ${this.getPageCount()} page(s) (${this.getPageRange()})</p>
+            </div>
 
-            <div class="action-buttons">
-              <button class="btn btn-primary extract-btn" ${this.selectedPages.length === 0 || this.isProcessing ? 'disabled' : ''}>
+            <div class="action-section">
+              <button class="btn btn-primary extract-btn" ${this.isProcessing ? 'disabled' : ''}>
                 ${this.isProcessing ? 'Processing...' : 'Extract Pages'}
-              </button>
-              <button class="btn btn-secondary preview-btn" ${this.selectedPages.length === 0 ? 'disabled' : ''}>
-                Preview Selection
               </button>
             </div>
           </div>
-        ` : ''}
+        `}
 
-        <div class="processing-info">
+        <div class="info-section">
           <div class="info-card">
             <h3>🔧 Professional PDF Processing</h3>
             <p>This tool uses advanced PDF processing technology, ensuring:</p>
@@ -160,14 +107,24 @@ export class ExtractPages extends BaseRippleComponent {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
+  private getPageCount(): number {
+    if (this.fromPage > this.toPage) return 0;
+    return this.toPage - this.fromPage + 1;
+  }
+
+  private getPageRange(): string {
+    if (this.fromPage === this.toPage) {
+      return `page ${this.fromPage}`;
+    }
+    return `pages ${this.fromPage}-${this.toPage}`;
+  }
+
   private bindEvents(): void {
     // Back button
     const backBtn = this.element.querySelector('.back-btn');
     if (backBtn) {
       backBtn.addEventListener('click', () => {
-        if (this.props.onBack) {
-          this.props.onBack();
-        }
+        this.props.onBack();
       });
     }
 
@@ -214,18 +171,34 @@ export class ExtractPages extends BaseRippleComponent {
     }
 
     // Remove file
-    const removeFileBtn = this.element.querySelector('.remove-file-btn');
-    if (removeFileBtn) {
-      removeFileBtn.addEventListener('click', () => {
+    const removeBtn = this.element.querySelector('.remove-file-btn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
         this.selectedFile = null;
-        this.selectedPages = [];
         this.totalPages = 0;
+        this.fromPage = 1;
+        this.toPage = 1;
         this.render();
       });
     }
 
-    // Page selection events are bound separately after file upload
-    this.bindPageSelectionEvents();
+    // Page inputs
+    const fromInput = this.element.querySelector('.from-input') as HTMLInputElement;
+    const toInput = this.element.querySelector('.to-input') as HTMLInputElement;
+
+    if (fromInput) {
+      fromInput.addEventListener('input', () => {
+        this.fromPage = Math.max(1, Math.min(parseInt(fromInput.value) || 1, this.totalPages));
+        this.updatePageSelection();
+      });
+    }
+
+    if (toInput) {
+      toInput.addEventListener('input', () => {
+        this.toPage = Math.max(1, Math.min(parseInt(toInput.value) || 1, this.totalPages));
+        this.updatePageSelection();
+      });
+    }
 
     // Extract button
     const extractBtn = this.element.querySelector('.extract-btn');
@@ -236,144 +209,10 @@ export class ExtractPages extends BaseRippleComponent {
     }
   }
 
-  private bindPageSelectionEvents(): void {
-    // Page selection methods
-    const rangeInputs = this.element.querySelectorAll('.page-input');
-    const pageListInput = this.element.querySelector('.page-list-input') as HTMLInputElement;
-    const selectionMethods = this.element.querySelectorAll('input[name="selection-method"]');
-    const oddEvenSelect = this.element.querySelector('.odd-even-select') as HTMLSelectElement;
-
-    console.log('Binding page selection events:', {
-      rangeInputs: rangeInputs.length,
-      pageListInput: !!pageListInput,
-      selectionMethods: selectionMethods.length,
-      oddEvenSelect: !!oddEvenSelect
-    });
-
-    rangeInputs.forEach((input, index) => {
-      console.log(`Binding events to range input ${index}:`, input);
-      input.addEventListener('input', () => {
-        console.log('Range input changed:', (input as HTMLInputElement).value);
-        this.updateSelectedPages();
-      });
-      input.addEventListener('keyup', () => {
-        console.log('Range input keyup:', (input as HTMLInputElement).value);
-        this.updateSelectedPages();
-      });
-      input.addEventListener('change', () => {
-        console.log('Range input change:', (input as HTMLInputElement).value);
-        this.updateSelectedPages();
-      });
-    });
-
-    if (pageListInput) {
-      pageListInput.addEventListener('input', () => {
-        console.log('Page list input changed:', pageListInput.value);
-        this.updateSelectedPages();
-      });
-      pageListInput.addEventListener('keyup', () => {
-        this.updateSelectedPages();
-      });
-    }
-
-    if (oddEvenSelect) {
-      oddEvenSelect.addEventListener('change', () => {
-        console.log('Odd/even select changed:', oddEvenSelect.value);
-        this.updateSelectedPages();
-      });
-    }
-
-    selectionMethods.forEach(method => {
-      method.addEventListener('change', () => {
-        console.log('Selection method changed:', (method as HTMLInputElement).value);
-        this.updateSelectedPages();
-      });
-    });
-  }
-
-  private updateSelectedPages(): void {
-    const selectedMethod = this.element.querySelector('input[name="selection-method"]:checked') as HTMLInputElement;
-
-    if (!selectedMethod) {
-      console.log('No selection method found');
-      return;
-    }
-
-    console.log('Selected method:', selectedMethod.value);
-    console.log('Total pages:', this.totalPages);
-
-    switch (selectedMethod.value) {
-      case 'range':
-        this.updateRangeSelection();
-        break;
-      case 'specific':
-        this.updateSpecificSelection();
-        break;
-      case 'odd-even':
-        this.updateOddEvenSelection();
-        break;
-    }
-
-    console.log('Selected pages:', this.selectedPages);
-    this.render();
-  }
-
-  private updateRangeSelection(): void {
-    const fromInput = this.element.querySelector('.range-inputs .page-input:first-child') as HTMLInputElement;
-    const toInput = this.element.querySelector('.range-inputs .page-input:last-child') as HTMLInputElement;
-
-    const from = parseInt(fromInput?.value || '0');
-    const to = parseInt(toInput?.value || '0');
-
-    console.log('Range selection - From:', from, 'To:', to, 'Total pages:', this.totalPages);
-
-    if (from > 0 && to > 0 && from <= to && to <= this.totalPages) {
-      this.selectedPages = Array.from({ length: to - from + 1 }, (_, i) => from + i);
-      console.log('Valid range, selected pages:', this.selectedPages);
-    } else {
-      this.selectedPages = [];
-      console.log('Invalid range, no pages selected');
-    }
-  }
-
-  private updateSpecificSelection(): void {
-    const pageListInput = this.element.querySelector('.page-list-input') as HTMLInputElement;
-    const input = pageListInput?.value || '';
-    
-    // Parse page list (e.g., "1, 3, 5-8, 10")
-    this.selectedPages = [];
-    const parts = input.split(',').map(s => s.trim());
-    
-    for (const part of parts) {
-      if (part.includes('-')) {
-        const [start, end] = part.split('-').map(s => parseInt(s.trim()));
-        if (start > 0 && end > 0 && start <= end && end <= this.totalPages) {
-          for (let i = start; i <= end; i++) {
-            if (!this.selectedPages.includes(i)) {
-              this.selectedPages.push(i);
-            }
-          }
-        }
-      } else {
-        const page = parseInt(part);
-        if (page > 0 && page <= this.totalPages && !this.selectedPages.includes(page)) {
-          this.selectedPages.push(page);
-        }
-      }
-    }
-    
-    this.selectedPages.sort((a, b) => a - b);
-  }
-
-  private updateOddEvenSelection(): void {
-    const oddEvenSelect = this.element.querySelector('.odd-even-select') as HTMLSelectElement;
-    const type = oddEvenSelect?.value || 'odd';
-    
-    this.selectedPages = [];
-    for (let i = 1; i <= this.totalPages; i++) {
-      if ((type === 'odd' && i % 2 === 1) || (type === 'even' && i % 2 === 0)) {
-        this.selectedPages.push(i);
-      }
+  private updatePageSelection(): void {
+    const preview = this.element.querySelector('.selection-preview p');
+    if (preview) {
+      preview.innerHTML = `<strong>Will extract:</strong> ${this.getPageCount()} page(s) (${this.getPageRange()})`;
     }
   }
 
@@ -393,8 +232,6 @@ export class ExtractPages extends BaseRippleComponent {
         body: formData
       });
 
-      console.log('Response status:', response.status);
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(errorData.error || 'Failed to analyse PDF');
@@ -402,56 +239,41 @@ export class ExtractPages extends BaseRippleComponent {
 
       const data = await response.json();
       console.log('PDF info received:', data);
-
-      this.totalPages = data.pages || 1; // Ensure we have at least 1 page
-      this.tempPath = data.tempPath;
+      
+      this.totalPages = data.pages || 1;
+      this.fromPage = 1;
+      this.toPage = this.totalPages;
       this.isProcessing = false;
-
+      
       this.render();
-
-      // Initialize with first page selected by default after render
-      this.selectedPages = [1];
-
-      // Set default values for range inputs and trigger update
-      setTimeout(() => {
-        const fromInput = this.element.querySelector('.range-inputs .page-input:first-child') as HTMLInputElement;
-        const toInput = this.element.querySelector('.range-inputs .page-input:last-child') as HTMLInputElement;
-
-        if (fromInput && toInput) {
-          fromInput.value = '1';
-          toInput.value = this.totalPages.toString();
-          console.log('Set default values - From:', fromInput.value, 'To:', toInput.value);
-
-          // Re-bind events for the page selection elements since they're new
-          this.bindPageSelectionEvents();
-
-          this.updateSelectedPages();
-        }
-      }, 100);
-
+      
       console.log('File processed successfully. Pages:', this.totalPages);
     } catch (error) {
       console.error('File selection error:', error);
-
-      // Show user-friendly error message
+      
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       alert(`Failed to analyse PDF file: ${errorMessage}\n\nPlease try again with a different PDF file.`);
-
+      
       this.selectedFile = null;
       this.isProcessing = false;
       this.totalPages = 0;
-      this.tempPath = '';
-      this.selectedPages = [];
+      this.fromPage = 1;
+      this.toPage = 1;
       this.render();
     }
   }
 
   private async handleExtraction(): Promise<void> {
-    if (this.selectedPages.length === 0 || !this.selectedFile || !this.tempPath) return;
-
+    if (!this.selectedFile || this.getPageCount() === 0) return;
+    
     try {
       this.isProcessing = true;
       this.render();
+
+      const pages = [];
+      for (let i = this.fromPage; i <= this.toPage; i++) {
+        pages.push(i);
+      }
 
       const response = await fetch('/api/pdf/extract', {
         method: 'POST',
@@ -459,8 +281,8 @@ export class ExtractPages extends BaseRippleComponent {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          tempPath: this.tempPath,
-          pages: this.selectedPages,
+          tempPath: '/tmp/uploads/' + this.selectedFile.name, // Simple approach
+          pages: pages,
           filename: this.selectedFile.name
         })
       });
@@ -482,17 +304,13 @@ export class ExtractPages extends BaseRippleComponent {
 
       this.isProcessing = false;
       this.render();
-
-      alert(`Successfully extracted ${this.selectedPages.length} pages from ${this.selectedFile.name}`);
+      
+      alert(`Successfully extracted ${pages.length} pages from ${this.selectedFile.name}`);
     } catch (error) {
       console.error('Extraction error:', error);
       alert('Failed to extract pages. Please try again.');
       this.isProcessing = false;
       this.render();
     }
-  }
-
-  update(props: Partial<ExtractPagesProps>): void {
-    super.update(props);
   }
 }
