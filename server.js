@@ -8,6 +8,7 @@ const fs = require('fs');
 const os = require('os');
 const { exec } = require('child_process');
 const { promisify } = require('util');
+const archiver = require('archiver');
 
 const execAsync = promisify(exec);
 const app = express();
@@ -184,12 +185,12 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
   }
 });
 
-// Extract pages endpoint
+// Extract pages endpoint - now supports multiple ranges as separate files
 app.post('/api/pdf/extract', async (req, res) => {
   try {
-    const { tempPath, pages, filename } = req.body;
+    const { tempPath, ranges, filename } = req.body;
 
-    if (!tempPath || !pages || !Array.isArray(pages)) {
+    if (!tempPath || !ranges || !Array.isArray(ranges)) {
       return res.status(400).json({ error: 'Invalid request parameters' });
     }
 
@@ -199,77 +200,97 @@ app.post('/api/pdf/extract', async (req, res) => {
       return res.status(400).json({ error: 'PDF file not found. Please upload the file again.' });
     }
 
-    // Create output filename
-    const outputFilename = filename.replace('.pdf', '_extracted.pdf');
-    const outputPath = path.join(outputDir, `${Date.now()}-${outputFilename}`);
+    console.log('Extracting', ranges.length, 'range(s) from', tempPath);
 
-    console.log('Extracting pages:', pages, 'from', tempPath);
-
-    // Check if pages are contiguous
-    const sortedPages = [...pages].sort((a, b) => a - b);
-    const isContiguous = sortedPages.every((page, index) =>
-      index === 0 || page === sortedPages[index - 1] + 1
-    );
+    const extractedFiles = [];
+    const timestamp = Date.now();
 
     try {
-      let command;
+      // Process each range separately
+      for (let rangeIndex = 0; rangeIndex < ranges.length; rangeIndex++) {
+        const range = ranges[rangeIndex];
+        const pages = [];
 
-      if (isContiguous && sortedPages.length > 0) {
-        // For contiguous pages, use simple FirstPage/LastPage approach
-        const firstPage = sortedPages[0];
-        const lastPage = sortedPages[sortedPages.length - 1];
-        command = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dFirstPage=${firstPage} -dLastPage=${lastPage} -sOutputFile="${outputPath}" "${tempPath}"`;
-      } else {
-        // For non-contiguous pages, we need to extract each page separately and merge
-        // Create a temporary directory for individual pages
-        const tempPagesDir = path.join(outputDir, `temp-${Date.now()}`);
-        fs.mkdirSync(tempPagesDir, { recursive: true });
-
-        const tempPageFiles = [];
-
-        // Extract each page individually
-        for (let i = 0; i < sortedPages.length; i++) {
-          const pageNum = sortedPages[i];
-          const tempPagePath = path.join(tempPagesDir, `page-${i}.pdf`);
-          const extractCmd = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dFirstPage=${pageNum} -dLastPage=${pageNum} -sOutputFile="${tempPagePath}" "${tempPath}"`;
-
-          await execAsync(extractCmd);
-          tempPageFiles.push(tempPagePath);
+        // Generate page numbers for this range
+        for (let i = range.from; i <= range.to; i++) {
+          pages.push(i);
         }
 
-        // Merge all extracted pages into one PDF
-        const fileList = tempPageFiles.map(f => `"${f}"`).join(' ');
-        command = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -sOutputFile="${outputPath}" ${fileList}`;
+        console.log(`Range ${rangeIndex + 1}: Pages ${range.from}-${range.to} (${pages.length} pages)`);
 
-        await execAsync(command);
+        // Create output filename for this range
+        const rangeFilename = filename.replace('.pdf', `_pages_${range.from}-${range.to}.pdf`);
+        const outputPath = path.join(outputDir, `${timestamp}-range${rangeIndex}-${rangeFilename}`);
 
-        // Clean up temporary page files
-        tempPageFiles.forEach(file => {
-          try {
-            if (fs.existsSync(file)) fs.unlinkSync(file);
-          } catch (e) {
-            console.error('Error deleting temp page file:', e);
+        // Check if pages are contiguous
+        const sortedPages = [...pages].sort((a, b) => a - b);
+        const isContiguous = sortedPages.every((page, index) =>
+          index === 0 || page === sortedPages[index - 1] + 1
+        );
+
+        let command;
+
+        if (isContiguous && sortedPages.length > 0) {
+          // For contiguous pages, use simple FirstPage/LastPage approach
+          const firstPage = sortedPages[0];
+          const lastPage = sortedPages[sortedPages.length - 1];
+          command = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dFirstPage=${firstPage} -dLastPage=${lastPage} -sOutputFile="${outputPath}" "${tempPath}"`;
+          await execAsync(command);
+        } else {
+          // For non-contiguous pages, extract each page separately and merge
+          const tempPagesDir = path.join(outputDir, `temp-${timestamp}-range${rangeIndex}`);
+          fs.mkdirSync(tempPagesDir, { recursive: true });
+
+          const tempPageFiles = [];
+
+          // Extract each page individually
+          for (let i = 0; i < sortedPages.length; i++) {
+            const pageNum = sortedPages[i];
+            const tempPagePath = path.join(tempPagesDir, `page-${i}.pdf`);
+            const extractCmd = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dFirstPage=${pageNum} -dLastPage=${pageNum} -sOutputFile="${tempPagePath}" "${tempPath}"`;
+
+            await execAsync(extractCmd);
+            tempPageFiles.push(tempPagePath);
           }
-        });
 
-        // Remove temp directory
-        try {
-          fs.rmdirSync(tempPagesDir);
-        } catch (e) {
-          console.error('Error removing temp directory:', e);
+          // Merge all extracted pages into one PDF
+          const fileList = tempPageFiles.map(f => `"${f}"`).join(' ');
+          command = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -sOutputFile="${outputPath}" ${fileList}`;
+          await execAsync(command);
+
+          // Clean up temporary page files
+          tempPageFiles.forEach(file => {
+            try {
+              if (fs.existsSync(file)) fs.unlinkSync(file);
+            } catch (e) {
+              console.error('Error deleting temp page file:', e);
+            }
+          });
+
+          // Remove temp directory
+          try {
+            fs.rmdirSync(tempPagesDir);
+          } catch (e) {
+            console.error('Error removing temp directory:', e);
+          }
+        }
+
+        // Verify the file was created
+        if (fs.existsSync(outputPath)) {
+          extractedFiles.push({
+            path: outputPath,
+            name: rangeFilename
+          });
+          console.log(`Range ${rangeIndex + 1} extracted successfully:`, outputPath);
+        } else {
+          throw new Error(`Failed to create PDF for range ${rangeIndex + 1}`);
         }
       }
 
-      if (isContiguous) {
-        await execAsync(command);
-      }
-
-      // Check if output file was created
-      if (fs.existsSync(outputPath)) {
-        console.log('Extraction successful. Output file:', outputPath);
-
-        // Send file to client
-        res.download(outputPath, outputFilename, (err) => {
+      // If only one range, send the single PDF
+      if (extractedFiles.length === 1) {
+        const file = extractedFiles[0];
+        res.download(file.path, file.name, (err) => {
           if (err) {
             console.error('Download error:', err);
           }
@@ -278,18 +299,61 @@ app.post('/api/pdf/extract', async (req, res) => {
           setTimeout(() => {
             try {
               if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-              if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+              if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
             } catch (cleanupError) {
               console.error('Cleanup error:', cleanupError);
             }
           }, 5000);
         });
       } else {
-        console.error('Output file was not created:', outputPath);
-        res.status(500).json({ error: 'Failed to create extracted PDF' });
+        // Multiple ranges - create a zip file
+        const zipFilename = filename.replace('.pdf', '_extracted.zip');
+        const zipPath = path.join(outputDir, `${timestamp}-${zipFilename}`);
+
+        const output = fs.createWriteStream(zipPath);
+        const archive = archiver('zip', {
+          zlib: { level: 9 }
+        });
+
+        output.on('close', () => {
+          console.log('Zip file created:', zipPath, '(' + archive.pointer() + ' bytes)');
+
+          // Send zip file to client
+          res.download(zipPath, zipFilename, (err) => {
+            if (err) {
+              console.error('Download error:', err);
+            }
+
+            // Clean up files
+            setTimeout(() => {
+              try {
+                if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+                if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
+                extractedFiles.forEach(file => {
+                  if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+                });
+              } catch (cleanupError) {
+                console.error('Cleanup error:', cleanupError);
+              }
+            }, 5000);
+          });
+        });
+
+        archive.on('error', (err) => {
+          throw err;
+        });
+
+        archive.pipe(output);
+
+        // Add all extracted PDFs to the zip
+        extractedFiles.forEach(file => {
+          archive.file(file.path, { name: file.name });
+        });
+
+        await archive.finalize();
       }
     } catch (error) {
-      console.error('Ghostscript extraction error:', error);
+      console.error('Extraction error:', error);
       res.status(500).json({ error: 'Failed to extract pages: ' + error.message });
     }
   } catch (error) {

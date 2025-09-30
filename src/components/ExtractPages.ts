@@ -63,7 +63,7 @@ export class ExtractPages extends BaseRippleComponent {
 
           <div class="page-selection-section">
             <h3>Select Pages to Extract</h3>
-            <p class="help-text">Add one or more page ranges to extract. You can extract multiple non-contiguous ranges.</p>
+            <p class="help-text">Add one or more page ranges. Each range will be saved as a separate PDF file. Multiple ranges will be downloaded as a zip file.</p>
 
             <div class="ranges-container">
               ${this.pageRanges.map((range, index) => `
@@ -86,7 +86,7 @@ export class ExtractPages extends BaseRippleComponent {
             <button class="btn btn-secondary add-range-btn">+ Add Another Range</button>
 
             <div class="selection-preview">
-              <p><strong>Will extract:</strong> ${this.getTotalPageCount()} page(s) ${this.getPageRangesDescription()}</p>
+              <p><strong>Will create:</strong> ${this.pageRanges.length} PDF file(s) with ${this.getTotalPageCount()} total page(s) ${this.getPageRangesDescription()}</p>
             </div>
 
             <div class="action-section">
@@ -337,21 +337,8 @@ export class ExtractPages extends BaseRippleComponent {
       this.isProcessing = true;
       this.render();
 
-      // Collect all pages from all ranges
-      const pages: number[] = [];
-      for (const range of this.pageRanges) {
-        for (let i = range.from; i <= range.to; i++) {
-          if (!pages.includes(i)) {
-            pages.push(i);
-          }
-        }
-      }
-
-      // Sort pages in ascending order
-      pages.sort((a, b) => a - b);
-
       console.log('Sending extraction request with tempPath:', this.tempPath);
-      console.log('Pages to extract:', pages);
+      console.log('Ranges to extract:', this.pageRanges);
 
       const response = await fetch('/api/pdf/extract', {
         method: 'POST',
@@ -360,7 +347,7 @@ export class ExtractPages extends BaseRippleComponent {
         },
         body: JSON.stringify({
           tempPath: this.tempPath,
-          pages: pages,
+          ranges: this.pageRanges,
           filename: this.selectedFile.name
         })
       });
@@ -369,12 +356,20 @@ export class ExtractPages extends BaseRippleComponent {
         throw new Error('Failed to extract pages');
       }
 
-      // Download the extracted PDF
+      // Download the extracted file(s)
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = this.selectedFile.name.replace('.pdf', '_extracted.pdf');
+
+      // Determine filename based on number of ranges
+      if (this.pageRanges.length === 1) {
+        const range = this.pageRanges[0];
+        a.download = this.selectedFile.name.replace('.pdf', `_pages_${range.from}-${range.to}.pdf`);
+      } else {
+        a.download = this.selectedFile.name.replace('.pdf', '_extracted.zip');
+      }
+
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -383,7 +378,12 @@ export class ExtractPages extends BaseRippleComponent {
       this.isProcessing = false;
       this.render();
 
-      alert(`Successfully extracted ${pages.length} pages from ${this.selectedFile.name}`);
+      const totalPages = this.getTotalPageCount();
+      if (this.pageRanges.length === 1) {
+        alert(`Successfully extracted ${totalPages} pages from ${this.selectedFile.name}`);
+      } else {
+        alert(`Successfully created ${this.pageRanges.length} PDF files with ${totalPages} total pages. Downloaded as a zip file.`);
+      }
     } catch (error) {
       console.error('Extraction error:', error);
       alert('Failed to extract pages. Please try again.');
