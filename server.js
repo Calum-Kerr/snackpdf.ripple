@@ -185,12 +185,15 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
   }
 });
 
-// Helper function to merge adjacent or overlapping ranges
+// Helper function to merge adjacent ranges (but not overlapping ones)
 function mergeRanges(ranges) {
   if (ranges.length <= 1) return ranges;
 
-  // Sort ranges by start page
-  const sorted = [...ranges].sort((a, b) => a.from - b.from);
+  // Sort ranges by start page, then by end page
+  const sorted = [...ranges].sort((a, b) => {
+    if (a.from !== b.from) return a.from - b.from;
+    return a.to - b.to;
+  });
 
   const merged = [sorted[0]];
 
@@ -198,13 +201,13 @@ function mergeRanges(ranges) {
     const current = sorted[i];
     const last = merged[merged.length - 1];
 
-    // Check if current range overlaps or is adjacent to the last merged range
-    // Adjacent means: current.from <= last.to + 1
-    if (current.from <= last.to + 1) {
+    // Only merge if ranges are truly adjacent (no overlap, no gap)
+    // Adjacent means: current.from === last.to + 1
+    if (current.from === last.to + 1) {
       // Merge: extend the last range to include current range
-      last.to = Math.max(last.to, current.to);
+      last.to = current.to;
     } else {
-      // No overlap or adjacency: keep as separate range
+      // Overlapping or gap: keep as separate range
       merged.push(current);
     }
   }
@@ -341,47 +344,55 @@ app.post('/api/pdf/extract', async (req, res) => {
         const zipFilename = filename.replace('.pdf', '_extracted.zip');
         const zipPath = path.join(outputDir, `${timestamp}-${zipFilename}`);
 
-        const output = fs.createWriteStream(zipPath);
-        const archive = archiver('zip', {
-          zlib: { level: 9 }
-        });
-
-        output.on('close', () => {
-          console.log('Zip file created:', zipPath, '(' + archive.pointer() + ' bytes)');
-
-          // Send zip file to client
-          res.download(zipPath, zipFilename, (err) => {
-            if (err) {
-              console.error('Download error:', err);
-            }
-
-            // Clean up files
-            setTimeout(() => {
-              try {
-                if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-                if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
-                extractedFiles.forEach(file => {
-                  if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                });
-              } catch (cleanupError) {
-                console.error('Cleanup error:', cleanupError);
-              }
-            }, 5000);
+        // Create zip file using a Promise
+        await new Promise((resolve, reject) => {
+          const output = fs.createWriteStream(zipPath);
+          const archive = archiver('zip', {
+            zlib: { level: 9 }
           });
+
+          output.on('close', () => {
+            console.log('Zip file created:', zipPath, '(' + archive.pointer() + ' bytes)');
+            resolve();
+          });
+
+          output.on('error', (err) => {
+            reject(err);
+          });
+
+          archive.on('error', (err) => {
+            reject(err);
+          });
+
+          archive.pipe(output);
+
+          // Add all extracted PDFs to the zip
+          extractedFiles.forEach(file => {
+            archive.file(file.path, { name: file.name });
+          });
+
+          archive.finalize();
         });
 
-        archive.on('error', (err) => {
-          throw err;
+        // Send zip file to client
+        res.download(zipPath, zipFilename, (err) => {
+          if (err) {
+            console.error('Download error:', err);
+          }
+
+          // Clean up files
+          setTimeout(() => {
+            try {
+              if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+              if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
+              extractedFiles.forEach(file => {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+              });
+            } catch (cleanupError) {
+              console.error('Cleanup error:', cleanupError);
+            }
+          }, 5000);
         });
-
-        archive.pipe(output);
-
-        // Add all extracted PDFs to the zip
-        extractedFiles.forEach(file => {
-          archive.file(file.path, { name: file.name });
-        });
-
-        await archive.finalize();
       }
     } catch (error) {
       console.error('Extraction error:', error);
