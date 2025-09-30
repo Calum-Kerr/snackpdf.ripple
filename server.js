@@ -5,12 +5,18 @@ const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 
 const execAsync = promisify(exec);
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Use OS-appropriate temp directory
+const tempDir = os.tmpdir();
+const uploadDir = path.join(tempDir, 'snackpdf-uploads');
+const outputDir = path.join(tempDir, 'snackpdf-outputs');
 
 // Security and performance middleware
 app.use(helmet({
@@ -32,14 +38,20 @@ app.use(compression());
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// Ensure directories exist
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log('Created upload directory:', uploadDir);
+}
+
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  console.log('Created output directory:', outputDir);
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = '/tmp/uploads';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
-      console.log('Created upload directory:', uploadDir);
-    }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -60,20 +72,34 @@ const upload = multer({
   }
 });
 
-// Ensure output directory exists with proper permissions
-const outputDir = '/tmp/outputs';
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir, { recursive: true, mode: 0o755 });
-  console.log('Created output directory:', outputDir);
-}
-
-// Test Ghostscript installation
+// Detect Ghostscript command (gs on Unix, gswin64c or gswin32c on Windows)
+let gsCommand = 'gs';
 try {
   const { execSync } = require('child_process');
-  const gsVersion = execSync('gs --version', { encoding: 'utf8' });
-  console.log('Ghostscript version:', gsVersion.trim());
+  try {
+    execSync('gs --version', { encoding: 'utf8' });
+    gsCommand = 'gs';
+    console.log('Using Ghostscript command: gs');
+  } catch (e) {
+    // Try Windows 64-bit version
+    try {
+      execSync('gswin64c --version', { encoding: 'utf8' });
+      gsCommand = 'gswin64c';
+      console.log('Using Ghostscript command: gswin64c');
+    } catch (e2) {
+      // Try Windows 32-bit version
+      try {
+        execSync('gswin32c --version', { encoding: 'utf8' });
+        gsCommand = 'gswin32c';
+        console.log('Using Ghostscript command: gswin32c');
+      } catch (e3) {
+        console.error('Ghostscript not found. Please install Ghostscript from https://ghostscript.com/releases/gsdnld.html');
+        console.error('Make sure to add Ghostscript to your system PATH during installation.');
+      }
+    }
+  }
 } catch (error) {
-  console.error('Ghostscript not found or not working:', error.message);
+  console.error('Error detecting Ghostscript:', error.message);
 }
 
 // Serve static files from dist directory
@@ -103,20 +129,21 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
       return res.status(500).json({ error: 'Cannot access uploaded file' });
     }
 
-    // Use simpler Ghostscript command - remove complex escaping
-    const command = `gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage -c "(${filePath}) (r) file runpdfbegin pdfpagecount = quit"`;
+    // Use Ghostscript to count pages - properly escape path for Windows
+    const escapedPath = filePath.replace(/\\/g, '/');
+    const command = `${gsCommand} -q -dNOPAUSE -dBATCH -sDEVICE=nullpage -c "(${escapedPath}) (r) file runpdfbegin pdfpagecount = quit"`;
 
     try {
       const { stdout, stderr } = await execAsync(command);
       console.log('Ghostscript stdout:', stdout);
-      console.log('Ghostscript stderr:', stderr);
+      if (stderr) console.log('Ghostscript stderr:', stderr);
 
       let pageCount = parseInt(stdout.trim());
 
       // If the direct method fails, try alternative method
       if (isNaN(pageCount) || pageCount <= 0) {
         console.log('Trying alternative page count method...');
-        const altCommand = `gs -q -dNOPAUSE -dBATCH -sDEVICE=nullpage "${filePath}"`;
+        const altCommand = `${gsCommand} -q -dNOPAUSE -dBATCH -sDEVICE=nullpage "${filePath}"`;
         try {
           await execAsync(altCommand);
           // If it processes without error, try to estimate pages
@@ -161,37 +188,92 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
 app.post('/api/pdf/extract', async (req, res) => {
   try {
     const { tempPath, pages, filename } = req.body;
-    
+
     if (!tempPath || !pages || !Array.isArray(pages)) {
       return res.status(400).json({ error: 'Invalid request parameters' });
     }
 
-    // Create output filename
-    const outputDir = '/tmp/outputs';
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    // Verify the temp file exists
+    if (!fs.existsSync(tempPath)) {
+      console.error('Temp file not found:', tempPath);
+      return res.status(400).json({ error: 'PDF file not found. Please upload the file again.' });
     }
-    
+
+    // Create output filename
     const outputFilename = filename.replace('.pdf', '_extracted.pdf');
     const outputPath = path.join(outputDir, `${Date.now()}-${outputFilename}`);
-    
-    // Convert page numbers to Ghostscript format
-    const pageList = pages.join(',');
-    
-    // Use Ghostscript to extract pages
-    const command = `gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dFirstPage=${Math.min(...pages)} -dLastPage=${Math.max(...pages)} -sOutputFile="${outputPath}" "${tempPath}"`;
-    
+
+    console.log('Extracting pages:', pages, 'from', tempPath);
+
+    // Check if pages are contiguous
+    const sortedPages = [...pages].sort((a, b) => a - b);
+    const isContiguous = sortedPages.every((page, index) =>
+      index === 0 || page === sortedPages[index - 1] + 1
+    );
+
     try {
-      await execAsync(command);
-      
+      let command;
+
+      if (isContiguous && sortedPages.length > 0) {
+        // For contiguous pages, use simple FirstPage/LastPage approach
+        const firstPage = sortedPages[0];
+        const lastPage = sortedPages[sortedPages.length - 1];
+        command = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dFirstPage=${firstPage} -dLastPage=${lastPage} -sOutputFile="${outputPath}" "${tempPath}"`;
+      } else {
+        // For non-contiguous pages, we need to extract each page separately and merge
+        // Create a temporary directory for individual pages
+        const tempPagesDir = path.join(outputDir, `temp-${Date.now()}`);
+        fs.mkdirSync(tempPagesDir, { recursive: true });
+
+        const tempPageFiles = [];
+
+        // Extract each page individually
+        for (let i = 0; i < sortedPages.length; i++) {
+          const pageNum = sortedPages[i];
+          const tempPagePath = path.join(tempPagesDir, `page-${i}.pdf`);
+          const extractCmd = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dFirstPage=${pageNum} -dLastPage=${pageNum} -sOutputFile="${tempPagePath}" "${tempPath}"`;
+
+          await execAsync(extractCmd);
+          tempPageFiles.push(tempPagePath);
+        }
+
+        // Merge all extracted pages into one PDF
+        const fileList = tempPageFiles.map(f => `"${f}"`).join(' ');
+        command = `${gsCommand} -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -sOutputFile="${outputPath}" ${fileList}`;
+
+        await execAsync(command);
+
+        // Clean up temporary page files
+        tempPageFiles.forEach(file => {
+          try {
+            if (fs.existsSync(file)) fs.unlinkSync(file);
+          } catch (e) {
+            console.error('Error deleting temp page file:', e);
+          }
+        });
+
+        // Remove temp directory
+        try {
+          fs.rmdirSync(tempPagesDir);
+        } catch (e) {
+          console.error('Error removing temp directory:', e);
+        }
+      }
+
+      if (isContiguous) {
+        await execAsync(command);
+      }
+
       // Check if output file was created
       if (fs.existsSync(outputPath)) {
+        console.log('Extraction successful. Output file:', outputPath);
+
         // Send file to client
         res.download(outputPath, outputFilename, (err) => {
           if (err) {
             console.error('Download error:', err);
           }
-          
+
           // Clean up files
           setTimeout(() => {
             try {
@@ -203,15 +285,16 @@ app.post('/api/pdf/extract', async (req, res) => {
           }, 5000);
         });
       } else {
+        console.error('Output file was not created:', outputPath);
         res.status(500).json({ error: 'Failed to create extracted PDF' });
       }
     } catch (error) {
       console.error('Ghostscript extraction error:', error);
-      res.status(500).json({ error: 'Failed to extract pages' });
+      res.status(500).json({ error: 'Failed to extract pages: ' + error.message });
     }
   } catch (error) {
     console.error('Extract pages error:', error);
-    res.status(500).json({ error: 'Failed to process extraction request' });
+    res.status(500).json({ error: 'Failed to process extraction request: ' + error.message });
   }
 });
 

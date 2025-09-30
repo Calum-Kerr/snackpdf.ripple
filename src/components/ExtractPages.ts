@@ -5,11 +5,16 @@ export interface ExtractPagesProps {
   onBack: () => void;
 }
 
+interface PageRange {
+  from: number;
+  to: number;
+}
+
 export class ExtractPages extends BaseRippleComponent {
   private selectedFile: File | null = null;
   private totalPages: number = 0;
-  private fromPage: number = 1;
-  private toPage: number = 1;
+  private tempPath: string = '';
+  private pageRanges: PageRange[] = [];
   private isProcessing: boolean = false;
 
   constructor(props: ExtractPagesProps) {
@@ -58,23 +63,34 @@ export class ExtractPages extends BaseRippleComponent {
 
           <div class="page-selection-section">
             <h3>Select Pages to Extract</h3>
-            <div class="simple-inputs">
-              <div class="input-group">
-                <label>From page:</label>
-                <input type="number" class="from-input" min="1" max="${this.totalPages}" value="${this.fromPage}">
-              </div>
-              <div class="input-group">
-                <label>To page:</label>
-                <input type="number" class="to-input" min="1" max="${this.totalPages}" value="${this.toPage}">
-              </div>
+            <p class="help-text">Add one or more page ranges to extract. You can extract multiple non-contiguous ranges.</p>
+
+            <div class="ranges-container">
+              ${this.pageRanges.map((range, index) => `
+                <div class="range-item" data-index="${index}">
+                  <div class="range-inputs">
+                    <div class="input-group">
+                      <label>From:</label>
+                      <input type="number" class="range-from" min="1" max="${this.totalPages}" value="${range.from}" data-index="${index}">
+                    </div>
+                    <div class="input-group">
+                      <label>To:</label>
+                      <input type="number" class="range-to" min="1" max="${this.totalPages}" value="${range.to}" data-index="${index}">
+                    </div>
+                  </div>
+                  <button class="btn btn-ghost remove-range-btn" data-index="${index}" title="Remove this range">×</button>
+                </div>
+              `).join('')}
             </div>
-            
+
+            <button class="btn btn-secondary add-range-btn">+ Add Another Range</button>
+
             <div class="selection-preview">
-              <p><strong>Will extract:</strong> ${this.getPageCount()} page(s) (${this.getPageRange()})</p>
+              <p><strong>Will extract:</strong> ${this.getTotalPageCount()} page(s) ${this.getPageRangesDescription()}</p>
             </div>
 
             <div class="action-section">
-              <button class="btn btn-primary extract-btn" ${this.isProcessing ? 'disabled' : ''}>
+              <button class="btn btn-primary extract-btn" ${this.isProcessing || this.pageRanges.length === 0 ? 'disabled' : ''}>
                 ${this.isProcessing ? 'Processing...' : 'Extract Pages'}
               </button>
             </div>
@@ -107,16 +123,55 @@ export class ExtractPages extends BaseRippleComponent {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
-  private getPageCount(): number {
-    if (this.fromPage > this.toPage) return 0;
-    return this.toPage - this.fromPage + 1;
+  private getTotalPageCount(): number {
+    let total = 0;
+    for (const range of this.pageRanges) {
+      if (range.from <= range.to) {
+        total += range.to - range.from + 1;
+      }
+    }
+    return total;
   }
 
-  private getPageRange(): string {
-    if (this.fromPage === this.toPage) {
-      return `page ${this.fromPage}`;
+  private getPageRangesDescription(): string {
+    if (this.pageRanges.length === 0) return '';
+
+    const descriptions = this.pageRanges.map(range => {
+      if (range.from === range.to) {
+        return `page ${range.from}`;
+      }
+      return `pages ${range.from}-${range.to}`;
+    });
+
+    if (descriptions.length === 1) {
+      return `(${descriptions[0]})`;
     }
-    return `pages ${this.fromPage}-${this.toPage}`;
+
+    return `(${descriptions.join(', ')})`;
+  }
+
+  private addRange(): void {
+    this.pageRanges.push({ from: 1, to: this.totalPages });
+    this.render();
+  }
+
+  private removeRange(index: number): void {
+    this.pageRanges.splice(index, 1);
+    this.render();
+  }
+
+  private updateRange(index: number, field: 'from' | 'to', value: number): void {
+    if (this.pageRanges[index]) {
+      this.pageRanges[index][field] = Math.max(1, Math.min(value, this.totalPages));
+      this.updatePreview();
+    }
+  }
+
+  private updatePreview(): void {
+    const preview = this.element.querySelector('.selection-preview p');
+    if (preview) {
+      preview.innerHTML = `<strong>Will extract:</strong> ${this.getTotalPageCount()} page(s) ${this.getPageRangesDescription()}`;
+    }
   }
 
   private bindEvents(): void {
@@ -176,29 +231,47 @@ export class ExtractPages extends BaseRippleComponent {
       removeBtn.addEventListener('click', () => {
         this.selectedFile = null;
         this.totalPages = 0;
-        this.fromPage = 1;
-        this.toPage = 1;
+        this.tempPath = '';
+        this.pageRanges = [];
         this.render();
       });
     }
 
-    // Page inputs
-    const fromInput = this.element.querySelector('.from-input') as HTMLInputElement;
-    const toInput = this.element.querySelector('.to-input') as HTMLInputElement;
-
-    if (fromInput) {
-      fromInput.addEventListener('input', () => {
-        this.fromPage = Math.max(1, Math.min(parseInt(fromInput.value) || 1, this.totalPages));
-        this.updatePageSelection();
+    // Add range button
+    const addRangeBtn = this.element.querySelector('.add-range-btn');
+    if (addRangeBtn) {
+      addRangeBtn.addEventListener('click', () => {
+        this.addRange();
       });
     }
 
-    if (toInput) {
-      toInput.addEventListener('input', () => {
-        this.toPage = Math.max(1, Math.min(parseInt(toInput.value) || 1, this.totalPages));
-        this.updatePageSelection();
+    // Remove range buttons
+    const removeRangeBtns = this.element.querySelectorAll('.remove-range-btn');
+    removeRangeBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt((e.target as HTMLElement).getAttribute('data-index') || '0');
+        this.removeRange(index);
       });
-    }
+    });
+
+    // Range inputs
+    const rangeFromInputs = this.element.querySelectorAll('.range-from');
+    rangeFromInputs.forEach(input => {
+      input.addEventListener('input', (e) => {
+        const index = parseInt((e.target as HTMLElement).getAttribute('data-index') || '0');
+        const value = parseInt((e.target as HTMLInputElement).value) || 1;
+        this.updateRange(index, 'from', value);
+      });
+    });
+
+    const rangeToInputs = this.element.querySelectorAll('.range-to');
+    rangeToInputs.forEach(input => {
+      input.addEventListener('input', (e) => {
+        const index = parseInt((e.target as HTMLElement).getAttribute('data-index') || '0');
+        const value = parseInt((e.target as HTMLInputElement).value) || 1;
+        this.updateRange(index, 'to', value);
+      });
+    });
 
     // Extract button
     const extractBtn = this.element.querySelector('.extract-btn');
@@ -206,13 +279,6 @@ export class ExtractPages extends BaseRippleComponent {
       extractBtn.addEventListener('click', () => {
         this.handleExtraction();
       });
-    }
-  }
-
-  private updatePageSelection(): void {
-    const preview = this.element.querySelector('.selection-preview p');
-    if (preview) {
-      preview.innerHTML = `<strong>Will extract:</strong> ${this.getPageCount()} page(s) (${this.getPageRange()})`;
     }
   }
 
@@ -239,14 +305,14 @@ export class ExtractPages extends BaseRippleComponent {
 
       const data = await response.json();
       console.log('PDF info received:', data);
-      
+
       this.totalPages = data.pages || 1;
-      this.fromPage = 1;
-      this.toPage = this.totalPages;
+      this.tempPath = data.tempPath || '';
+      this.pageRanges = [{ from: 1, to: this.totalPages }];
       this.isProcessing = false;
-      
+
       this.render();
-      
+
       console.log('File processed successfully. Pages:', this.totalPages);
     } catch (error) {
       console.error('File selection error:', error);
@@ -257,23 +323,31 @@ export class ExtractPages extends BaseRippleComponent {
       this.selectedFile = null;
       this.isProcessing = false;
       this.totalPages = 0;
-      this.fromPage = 1;
-      this.toPage = 1;
+      this.tempPath = '';
+      this.pageRanges = [];
       this.render();
     }
   }
 
   private async handleExtraction(): Promise<void> {
-    if (!this.selectedFile || this.getPageCount() === 0) return;
-    
+    if (!this.selectedFile || this.pageRanges.length === 0 || !this.tempPath) return;
+
     try {
       this.isProcessing = true;
       this.render();
 
-      const pages = [];
-      for (let i = this.fromPage; i <= this.toPage; i++) {
-        pages.push(i);
+      // Collect all pages from all ranges
+      const pages: number[] = [];
+      for (const range of this.pageRanges) {
+        for (let i = range.from; i <= range.to; i++) {
+          if (!pages.includes(i)) {
+            pages.push(i);
+          }
+        }
       }
+
+      // Sort pages in ascending order
+      pages.sort((a, b) => a - b);
 
       const response = await fetch('/api/pdf/extract', {
         method: 'POST',
@@ -281,7 +355,7 @@ export class ExtractPages extends BaseRippleComponent {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          tempPath: '/tmp/uploads/' + this.selectedFile.name, // Simple approach
+          tempPath: this.tempPath,
           pages: pages,
           filename: this.selectedFile.name
         })
@@ -304,7 +378,7 @@ export class ExtractPages extends BaseRippleComponent {
 
       this.isProcessing = false;
       this.render();
-      
+
       alert(`Successfully extracted ${pages.length} pages from ${this.selectedFile.name}`);
     } catch (error) {
       console.error('Extraction error:', error);
