@@ -185,6 +185,33 @@ app.post('/api/pdf/info', upload.single('pdf'), async (req, res) => {
   }
 });
 
+// Helper function to merge adjacent or overlapping ranges
+function mergeRanges(ranges) {
+  if (ranges.length <= 1) return ranges;
+
+  // Sort ranges by start page
+  const sorted = [...ranges].sort((a, b) => a.from - b.from);
+
+  const merged = [sorted[0]];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const current = sorted[i];
+    const last = merged[merged.length - 1];
+
+    // Check if current range overlaps or is adjacent to the last merged range
+    // Adjacent means: current.from <= last.to + 1
+    if (current.from <= last.to + 1) {
+      // Merge: extend the last range to include current range
+      last.to = Math.max(last.to, current.to);
+    } else {
+      // No overlap or adjacency: keep as separate range
+      merged.push(current);
+    }
+  }
+
+  return merged;
+}
+
 // Extract pages endpoint - now supports multiple ranges as separate files
 app.post('/api/pdf/extract', async (req, res) => {
   try {
@@ -206,9 +233,13 @@ app.post('/api/pdf/extract', async (req, res) => {
     const timestamp = Date.now();
 
     try {
+      // Smart merge: try to merge adjacent or overlapping ranges
+      const mergedRanges = mergeRanges(ranges);
+      console.log('After merging:', mergedRanges.length, 'range(s)');
+
       // Process each range separately
-      for (let rangeIndex = 0; rangeIndex < ranges.length; rangeIndex++) {
-        const range = ranges[rangeIndex];
+      for (let rangeIndex = 0; rangeIndex < mergedRanges.length; rangeIndex++) {
+        const range = mergedRanges[rangeIndex];
         const pages = [];
 
         // Generate page numbers for this range

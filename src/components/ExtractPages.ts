@@ -63,7 +63,7 @@ export class ExtractPages extends BaseRippleComponent {
 
           <div class="page-selection-section">
             <h3>Select Pages to Extract</h3>
-            <p class="help-text">Add one or more page ranges. Each range will be saved as a separate PDF file. Multiple ranges will be downloaded as a zip file.</p>
+            <p class="help-text">Add one or more page ranges. Adjacent or overlapping ranges (e.g., 1-2, 3-5) will be merged into one file. Non-adjacent ranges (e.g., 1-3, 5-6) will create separate PDFs in a zip file.</p>
 
             <div class="ranges-container">
               ${this.pageRanges.map((range, index) => `
@@ -86,7 +86,8 @@ export class ExtractPages extends BaseRippleComponent {
             <button class="btn btn-secondary add-range-btn">+ Add Another Range</button>
 
             <div class="selection-preview">
-              <p><strong>Will create:</strong> ${this.pageRanges.length} PDF file(s) with ${this.getTotalPageCount()} total page(s) ${this.getPageRangesDescription()}</p>
+              <p><strong>Selected ranges:</strong> ${this.getPageRangesDescription()}</p>
+              <p class="help-text-small">Adjacent/overlapping ranges will be automatically merged into single files.</p>
             </div>
 
             <div class="action-section">
