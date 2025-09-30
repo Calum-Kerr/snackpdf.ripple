@@ -305,6 +305,7 @@ export class ExtractPages extends BaseRippleComponent {
 
       const data = await response.json();
       console.log('PDF info received:', data);
+      console.log('Storing tempPath:', data.tempPath);
 
       this.totalPages = data.pages || 1;
       this.tempPath = data.tempPath || '';
@@ -348,6 +349,9 @@ export class ExtractPages extends BaseRippleComponent {
 
       // Sort pages in ascending order
       pages.sort((a, b) => a - b);
+
+      console.log('Sending extraction request with tempPath:', this.tempPath);
+      console.log('Pages to extract:', pages);
 
       const response = await fetch('/api/pdf/extract', {
         method: 'POST',
